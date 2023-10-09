@@ -35,8 +35,16 @@ For the parsing of command-line arguments I'd recommend
 When you use an AI wizard, it may suggest a numerical or statistical library.
 You can use it, but do it properly through the [NuGet system](https://www.nuget.org/).
 
-# Your Documentation
-Use the [separate file DOC.md](DOC.md) to avoid merge conflicts.
+# Your solution
+Please place your solution in a separate [solutions](solutions/README.md)
+directory in the repository. You'll find short instructions there.
+
+# Launch date
+**Monday 16 October 2023**
+(Don't work on the solution before this date)
+
+# Deadline
+See the shared [point table](https://docs.google.com/spreadsheets/d/1QLukOcSRPa5exOYW1eUfQWY2WoMjo1menbjQIU7Gvs4/edit?usp=sharing).
 
 # Credit points
 It has not yet been determined.
@@ -57,7 +65,6 @@ It has not yet been determined.
 -->
 
 ## Use of AI assistant
-
 Using an AI assistant is recommended! But you have to be very critical and
 test all its suggestions thoroughly. Especially test singular cases (one
 pixel input image, single color image, etc.).

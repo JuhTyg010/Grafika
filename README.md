@@ -31,6 +31,33 @@ it works well on Windows, Linux and macOS.
 We use `Visual Studio 2022`, the [Community](https://visualstudio.microsoft.com/vs/community/)
 (free) version is good enough for all tasks.
 
+## Solutions
+Please place all your solutions in separate [solutions](solutions/README.md)
+directory in the repository. **One subdirectory per task**.
+You'll find short instructions there.
+
+The naming conventions in the standard Visual Studio project creation procedures
+allow you to simply copy a pilot task project to the `solutions` directory.
+So if you want to extend a pilot project, just copy everything in a task directory
+to the `solutions` directory, rewrite the `README.md` and you are ready
+to work on your copy. To be safe, remove the `.vs`,
+`obj` and `bin` subdirectories first.
+
+Example of files and directories that should be copied to the `solutions` directory:
+```
+/01-AllTheColors/
+/01-AllTheColors/01-AllTheColors.csproj
+/01-AllTheColors/01-AllTheColors.sln
+/01-AllTheColors/Program.cs
+/01-AllTheColors/README.md    (should be overwritten later by README-TEMPLATE.md)
+/01-AllTheColors/Properties/
+/01-AllTheColors/Properties/launchSettings.json
+```
+
+Template for your documentation of the finished task is [here](solutions/README-TEMPLATE.md). Copy
+the file to every directory with your solution (over the original `README.md`) and
+edit all the sections.
+
 ## AI assistants
 The use of **AI assistants (based on Large Language Models)** is not prohibited,
 on the contrary! We welcome you to use them under two conditions:
@@ -90,16 +117,14 @@ https://gitlab.mff.cuni.cz/isert.
 * If anything doesn't work well in your **Linux/macOS environment**,
   you should write me (<pepca@cgg.mff.cuni.cz>) as soon as possible.
   Of course you could report positive experience in Linux/macOS as well.
-* You can work in your repositories without major restrictions, you
-  just need to maintain some basic order so that we can find our way
-  around when we review your solution. Please use `DOC.md` for that.
+* You can work in your repositories without major restrictions.
+  A recommended place for your solutions is the [solutions](solutions/README.md)
+  directory. You'll find short instructions there.
 * We suggest that you add a **tag** with the name of the task to the repository
   at the time of submission (for example, `01-solution`).
   See the [git tag documentation](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
 * Of course, it wouldn't hurt to send us an **email** to let us know that
   you've solved the task. In time, we will see if the "tag" system is sufficient.
-* If you want to put your solution in new or unusual directories,
-  please write about it in the `DOC.md` as well.
 * If you want use any third party library, do it correctly and use the
   [NuGet system](https://www.nuget.org/). Many pilot projects are
   using libraries already (e.g. [SixLabors.ImageSharp](https://www.nuget.org/packages/SixLabors.ImageSharp)),
@@ -107,7 +132,7 @@ https://gitlab.mff.cuni.cz/isert.
 * For all your documentation please
   use the [MarkDown (.md)](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
   syntax ([another MarkDown page](https://www.markdownguide.org/basic-syntax/))
-* Use the [separate file DOC.md](DOC.md) in each task directory to avoid
-  merge conflicts. Don't edit existing `README.md` files!
+* Use the usual `README.md` in each solutions' directory (see the
+  [solutions/README.md](solutions/README.md) for instructions)!
 * Visual Studio 2022 supports direct **MarkDown editing** (with live
   result preview) starting from the 17.5 update
