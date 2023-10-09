@@ -7,8 +7,8 @@ namespace _01_AllTheColors;
 internal class Program
 {
   // Constants for image dimensions and tile size
-  private const int Width = 256*16;
-  private const int Height = 256*16;
+  private int Width = 256*16;
+  private int Height = 256*16;
   
   // Constant for the output filename
   private const string OutputFilename = "checkerboard.png";
@@ -19,7 +19,7 @@ internal class Program
 
   static void Main (string[] args)
   {
-    // Create a new image with the specified dimensions
+    
     bool isWidth = true;
     bool isIncreasing = true;
     bool greenIncreasing = false;
