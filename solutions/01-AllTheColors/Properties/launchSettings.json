@@ -2,7 +2,6 @@
   "profiles": {
     "01-AllTheColors": {
       "commandName": "Project",
-      "commandLineArgs": "-w 800 -h 600 -t 100 --hsv1 0.0 1.0 1.0 --hsv2 60.0 1.0 1.0",
       "workingDirectory": "$(ProjectDir)"
     }
   }
