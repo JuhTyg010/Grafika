@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>_03_SFC</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="2022-06-06-IMG_9308_raw_1900.jpg" />
+    <None Remove="2023-05-21-IMG_1053_raw_1900.jpg" />
+    <None Remove="dalle2023-10-07-01-56-26.jpg" />
+    <None Remove="dalle2023-10-07-ice01.jpg" />
+    <None Remove="dalle2023-10-12-22-58-42.jpg" />
+    <None Remove="egsr1.png" />
+    <None Remove="masa512g.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
+  </ItemGroup>
+
+</Project>
