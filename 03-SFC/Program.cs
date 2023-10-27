@@ -125,6 +125,12 @@ internal class Program
         if (processed.Count != width * height)
         {
           Console.WriteLine($"Not all pixels were passed ({processed.Count} < {width} x {height}).");
+          for (int i = 0; i < width * height; i++)
+            if (!processed.Contains(i))
+            {
+              Console.WriteLine($"Pixel [{i % width},{i / width}] was not processed.");
+              break;
+            }
           return;
         }
 
