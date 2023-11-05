@@ -23,9 +23,15 @@ it is obvious that the result will have 8-fold rotational symmetry. For
 various distance formulas, see
 [this page by Dave Eberly](https://www.geometrictools.com/Documentation/Documentation.html).
 
-Using the distance of the current pixel to a set of points/lines that can
-already be easily made rotationally symmetric is a generally
-applicable idea.
+Using the distance of the current pixel to a **set of points/lines** that can
+be easily rotationally symmetric is a generally
+applicable idea (see the example image below).
+
+Just one more idea: there are functions that can be used for mixing
+distances, see  
+[A Very Quick Introduction to Metaballs](https://people.computing.clemson.edu/~dhouse/courses/881/notes/metaballs/index.html)  
+[Blobby Implicit Surfaces (Pixar, 1999)](https://renderman.pixar.com/resources/RenderMan_20/appnote.31.html)  
+[Metaballs (Wikipedia)](https://en.wikipedia.org/wiki/Metaballs)  
 
 You can get inspiration from classical mandalas, see for example this one
 [Carmia Jordaan's page](https://www.clementinecreative.co.za/step-by-step-tutorial-on-how-to-draw-a-mandala/),
@@ -82,5 +88,7 @@ If you could get him to give some useful advice on that, I'd be very
 interested.
 
 # Example
+![7-fold ornament](m7-20-35.jpg)
+
 You can find many relevant geometric drawings using this
 [Google search](https://www.google.com/search?q=mandala+image).

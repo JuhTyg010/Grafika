@@ -125,6 +125,8 @@ https://gitlab.mff.cuni.cz/isert.
   See the [git tag documentation](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
 * Of course, it wouldn't hurt to send us an **email** to let us know that
   you've solved the task. In time, we will see if the "tag" system is sufficient.
+* Don't forget to point out the extra work you have done (for bonus points).
+  Use the "Extra work / Bonuses" section in the documentation.
 * If you want use any third party library, do it correctly and use the
   [NuGet system](https://www.nuget.org/). Many pilot projects are
   using libraries already (e.g. [SixLabors.ImageSharp](https://www.nuget.org/packages/SixLabors.ImageSharp)),
