@@ -13,7 +13,7 @@ public class Options
   [Option('c', "count", Required = true, Default = 1, HelpText = "Number of colors to get")]
   public int Count { get; set; } = 1;
 
-  [Option('o', "output", Required = false, Default = "", HelpText = "Output file name")]
+  [Option('o', "output", Required = true, Default = "", HelpText = "Output file name")]
   public string OutputFileName { get; set; } = "";
 }
 
@@ -97,17 +97,8 @@ class Program
 
               }
 
-              if (string.IsNullOrEmpty(o.FileName))
-              {
-                  // Simple stdout output (CSV format)
-                  foreach (Rgba32 c in outColors)
-                  {
-                      Console.WriteLine($"{c.R},{c.G},{c.B}");
-                  }
-              }
-              else
-              {
-                  if (o.FileName.EndsWith(".svg"))
+              
+                  if (o.OutputFileName.EndsWith(".svg"))
                   {
                       // SVG output for debugging...
                       // Create an XML document to represent the SVG
@@ -116,8 +107,8 @@ class Program
                       // Create the SVG root element
                       XmlElement svgRoot = svgDoc.CreateElement("svg");
                       svgRoot.SetAttribute("xmlns", "http://www.w3.org/2000/svg");
-                      svgRoot.SetAttribute("width", image.Width.ToString());
-                      svgRoot.SetAttribute("height", image.Height.ToString());
+                      svgRoot.SetAttribute("width", (o.Count*RectWidth).ToString());
+                      svgRoot.SetAttribute("height", RectHeight.ToString());
                       svgDoc.AppendChild(svgRoot);
 
                       // Create a group element to contain the color rectangles
@@ -137,12 +128,12 @@ class Program
                       }
 
                       // Save the SVG document to a file
-                      svgDoc.Save(o.FileName);
+                      svgDoc.Save(o.OutputFileName);
 
-                      Console.WriteLine($"SVG saved to {o.FileName}");
+                      Console.WriteLine($"SVG saved to {o.OutputFileName}");
                       
                   }
-                  else if(o.FileName.EndsWith(".png"))
+                  else if(o.OutputFileName.EndsWith(".png"))
                   {
                       // PNG output
                       using (Image<Rgba32> outImage = new Image<Rgba32>(o.Count * RectWidth, RectHeight))
@@ -158,11 +149,11 @@ class Program
                               }
                           }
 
-                          outImage.Save(o.FileName);
-                          Console.WriteLine($"PNG saved to {o.FileName}");
+                          outImage.Save(o.OutputFileName);
+                          Console.WriteLine($"PNG saved to {o.OutputFileName}");
                       }
                   }
-                  else if(o.FileName.EndsWith(".jpg"))
+                  else if(o.OutputFileName.EndsWith(".jpg"))
                   {
                       // JPG output
                       using (Image<Rgba32> outImage = new Image<Rgba32>(o.Count * RectWidth, RectHeight))
@@ -178,11 +169,11 @@ class Program
                               }
                           }
 
-                          outImage.SaveAsJpeg(o.FileName);
-                          Console.WriteLine($"JPG saved to {o.FileName}");
+                          outImage.SaveAsJpeg(o.OutputFileName);
+                          Console.WriteLine($"JPG saved to {o.OutputFileName}");
                       }
                   }
-                  else if(o.FileName.EndsWith(".bmp"))
+                  else if(o.OutputFileName.EndsWith(".bmp"))
                   {
                       // BMP output
                       using (Image<Rgba32> outImage = new Image<Rgba32>(o.Count * RectWidth, RectHeight))
@@ -198,16 +189,15 @@ class Program
                               }
                           }
 
-                          outImage.SaveAsBmp(o.FileName);
-                          Console.WriteLine($"BMP saved to {o.FileName}");
+                          outImage.SaveAsBmp(o.OutputFileName);
+                          Console.WriteLine($"BMP saved to {o.OutputFileName}");
                       }
                   }
 
                   else
                   {
-                      Console.WriteLine("Cannot handle output file without .svg, .png, .jpg, or .bmp extension");
+                    Console.WriteLine("Cannot handle output file without .svg, .png, .jpg, or .bmp extension");
                   }
-              }
           }
       });
     
