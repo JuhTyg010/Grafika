@@ -12,6 +12,16 @@ on disk, that will eventually be encoded as a video file.
 We won't accept mandala animations based only on color changes, a non-trivial
 shape metamorphosis/transition must be involved!
 
+You may find the [page on easing functions](https://easings.net/) useful.
+
+# Pilot project
+There is a VS pilot project that shows how to create a sequence of PNG
+images. All output images are stored in the `anim` subdirectory,
+where you will find a batch `encode.bat` for your convenience.
+
+Please consider the pilot project as a demonstration of how to use
+the `string.Format()` function to format the filenames of individual frames.
+
 # Your solution
 Please place your solution in a separate [solutions](solutions/README.md)
 directory in the repository. You'll find short instructions there.
@@ -61,7 +71,20 @@ creating a video from individual frames is called [Slideshow](https://trac.ffmpe
 See the shared [point table](https://docs.google.com/spreadsheets/d/1QLukOcSRPa5exOYW1eUfQWY2WoMjo1menbjQIU7Gvs4/edit?usp=sharing).
 
 # Credit points
-It has not yet been determined.
+**Basic solution: 7 points**
+* all generated frames must be circular symmetric to resemble a mandala (see the previous task `04-Mandala`)
+* image size in pixels via arguments
+* output filename mask specified in an argument
+* C# program creates animation frames as a sequence of PNG images on disk
+* encoding of the video-file (e.g. using the `FFmpeg` utility)
+* publishing of the video on some public platform (YouTube, Vimeo, Google Drive...)
+* documentation in the `README.md` file (including definition of all command
+  line arguments and URL of the uploaded video)
+
+**Bonus points: up to 7 more points**
+* invention, animation invention
+* visual appeal
+* cyclic animation (plays smoothly in the "auto-repeat" mode)
 
 ## Use of AI assistant
 Using an AI assistant in this task will be very difficult. Sure, you can use

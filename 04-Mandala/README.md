@@ -37,6 +37,26 @@ You can get inspiration from classical mandalas, see for example this one
 [Carmia Jordaan's page](https://www.clementinecreative.co.za/step-by-step-tutorial-on-how-to-draw-a-mandala/),
 or use Google or AI.
 
+## Technical ideas
+You may find the [page on easing functions](https://easings.net/) useful.
+
+If you need to define a rotation manually, use formulas:
+```csharp
+  double x, y;         // Original point/vector coordinates
+  double angle;        // Rotation angle in radians
+  double newX, newY;   // Rotated point/vector coordinates
+
+  double sina = Math.Sin(angle);
+  double cosa = Math.Cos(angle);
+
+  newX = x * cosa - y * sina;
+  newY = x * sina + y * cosa;
+  // Note that there are two orientations/conventions, for the second
+  // one you have to switch + and - signs (with the "sina").
+  // Diagonal terms are always positive ("cosa")
+```
+
+
 ## Animation
 Note that there will be a next task [05-Animation](../05-Animation/README.md)
 based on this one. If you decide to work on `04-Mandala`, we strongly recommend
