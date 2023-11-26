@@ -20,11 +20,11 @@ public class Options
 class Cube
 {
     public List<Rgba32> Colors { get; }
-    
+
     public Dictionary<Rgba32, int> ColorCount { get; }
-    
+
     public int Count { get; }
-    
+
     public Cube(List<Rgba32> colors, Dictionary<Rgba32, int> colorCount)
     {
         Colors = colors;
@@ -34,6 +34,12 @@ class Cube
         {
             Count += ColorCount[color];
         }
+    }
+    public Cube(List<Rgba32> colors, Dictionary<Rgba32, int> colorCount, int count)
+    {
+        Colors = colors;
+        ColorCount = colorCount;
+        Count = count;
     }
 }
 
@@ -47,58 +53,79 @@ class Program
       {
           using (Image<Rgba32> image = Image.Load<Rgba32>(o.FileName))
           {
-              List<Rgba32> allColors = new List<Rgba32>();
-              List<Rgba32> uniqueColors = new List<Rgba32>();
-              Dictionary<Rgba32, int> colorCount = new Dictionary<Rgba32, int>();
+              /*List<Rgba32> uniqueColors = new List<Rgba32>();
+              Dictionary<Rgba32, int> colorCount = new Dictionary<Rgba32, int>();*/
+              List<Rgba32>[] uniqueColorsSectors = new List<Rgba32>[9];
+              Dictionary<Rgba32, int>[] colorCountSectors = new Dictionary<Rgba32, int>[9];
+                for(int i = 0; i < 9; i++) {
+                    uniqueColorsSectors[i] = new List<Rgba32>();
+                    colorCountSectors[i] = new Dictionary<Rgba32, int>();
+                }
               for (int i = 0; i < image.Width; i++)
               {
                   for (int j = 0; j < image.Height; j++)
                   {
-                      allColors.Add(image[i, j]);
-                      if (colorCount.ContainsKey(image[i, j]))
+                      int sector = (i / (image.Width / 3 + 1)) + (j / (image.Height / 3 + 1)) * 3;
+
+                      if (colorCountSectors[sector].ContainsKey(image[i, j]))
                       {
-                          colorCount[image[i, j]]++;
-                      }
-                      else
-                      {
-                          colorCount.Add(image[i, j], 1);
-                          uniqueColors.Add(image[i, j]);
+                          colorCountSectors[sector][image[i, j]]++;
+                      } else {
+                          colorCountSectors[sector].Add(image[i, j], 1);
+                          uniqueColorsSectors[sector].Add(image[i, j]);
                       }
                   }
               }
+
+              int colorCount = 0;
+              foreach (var s in uniqueColorsSectors) colorCount += s.Count;
 
               var outColors = new List<Rgba32>();
-              if (uniqueColors.Count < o.Count)
+              if (colorCount < o.Count)
               {
-                  outColors = uniqueColors;
-              }
-              else
-              {
-                  //outImage = new Image<Rgba32>(o.Count * 200, 200);
-
-                  if (uniqueColors.Count > 100000)
-                  {
-                      var temp = KMeansClustering(uniqueColors, colorCount, o.Count + 5, 114);
-                      var temp2 = KMeansClustering(uniqueColors, colorCount, o.Count + 2, 225);
-                      List<Rgba32> temp3 = KMeansClustering(uniqueColors, colorCount, o.Count + 7, 100 + o.Count);
-                      var temp4 = KMeansClustering(uniqueColors, colorCount, o.Count * 2,
-                          42 + 24 + 9 + 17 + 8 + 4 + 2 + 1);
-                      temp.AddRange(temp2);
-                      temp.AddRange(temp3);
-                      temp.AddRange(temp4);
-                      outColors = KMeansClustering(temp, colorCount, o.Count, 100);
-                  }
-                  else
-                  {
-                      outColors = MedianCutQuantization(uniqueColors, colorCount, o.Count);
+                  foreach (var sector in uniqueColorsSectors) {
+                      outColors.AddRange(sector);
                   }
 
+              } else {
+                  //some parsing algorithm
+                    List<Rgba32> tempColors = new List<Rgba32>();
+                    Dictionary<Rgba32, int> tempColorCount = new Dictionary<Rgba32, int>();
+                  for(int i=0; i<9; i++) {
 
+                      List<Rgba32>tempo = MedianCutQuantization(uniqueColorsSectors[i], colorCountSectors[i], 100);
+                      Dictionary<Rgba32,int> temp = new Dictionary<Rgba32, int>();
+                        foreach (var c in tempo) {
+                            if(temp.ContainsKey(c)) {
+                                temp[c] += 1;
+                            } else {
+                                temp.Add(c, 1);
+                            }
+                        }
+                        List<Rgba32> t = MedianCutQuantization(tempo, temp, o.Count);
 
+                      foreach (var c in t) {
+                          if(tempColorCount.ContainsKey(c)) {
+                              tempColorCount[c] += colorCountSectors[i][c];
+                          } else {
+                              tempColorCount.Add(c, colorCountSectors[i][c]);
+                              tempColors.Add(c);
+                          }
+                      }
+                  }
+                  outColors = MedianCutQuantization(tempColors, tempColorCount, o.Count);
               }
 
-              
-                  if (o.OutputFileName.EndsWith(".svg"))
+              for (int x = 0; x < image.Width; x++)
+              {
+                  for (int y = 0; y < image.Height; y++)
+                  {
+                      image[x, y] = FindClosestClusterColor(image[x, y], outColors);
+                  }
+              }
+              image.Save($"{o.FileName}CLUSTERED.png");
+
+              if (o.OutputFileName.EndsWith(".svg"))
                   {
                       // SVG output for debugging...
                       // Create an XML document to represent the SVG
@@ -107,7 +134,7 @@ class Program
                       // Create the SVG root element
                       XmlElement svgRoot = svgDoc.CreateElement("svg");
                       svgRoot.SetAttribute("xmlns", "http://www.w3.org/2000/svg");
-                      svgRoot.SetAttribute("width", (o.Count*RectWidth).ToString());
+                      svgRoot.SetAttribute("width", (outColors.Count*RectWidth).ToString());
                       svgRoot.SetAttribute("height", RectHeight.ToString());
                       svgDoc.AppendChild(svgRoot);
 
@@ -131,12 +158,12 @@ class Program
                       svgDoc.Save(o.OutputFileName);
 
                       Console.WriteLine($"SVG saved to {o.OutputFileName}");
-                      
+
                   }
                   else if(o.OutputFileName.EndsWith(".png"))
                   {
                       // PNG output
-                      using (Image<Rgba32> outImage = new Image<Rgba32>(o.Count * RectWidth, RectHeight))
+                      using (Image<Rgba32> outImage = new Image<Rgba32>(outColors.Count * RectWidth, RectHeight))
                       {
                           for (int i = 0; i < outColors.Count; i++)
                           {
@@ -156,7 +183,7 @@ class Program
                   else if(o.OutputFileName.EndsWith(".jpg"))
                   {
                       // JPG output
-                      using (Image<Rgba32> outImage = new Image<Rgba32>(o.Count * RectWidth, RectHeight))
+                      using (Image<Rgba32> outImage = new Image<Rgba32>(outColors.Count * RectWidth, RectHeight))
                       {
                           for (int i = 0; i < outColors.Count; i++)
                           {
@@ -176,7 +203,7 @@ class Program
                   else if(o.OutputFileName.EndsWith(".bmp"))
                   {
                       // BMP output
-                      using (Image<Rgba32> outImage = new Image<Rgba32>(o.Count * RectWidth, RectHeight))
+                      using (Image<Rgba32> outImage = new Image<Rgba32>(outColors.Count * RectWidth, RectHeight))
                       {
                           for (int i = 0; i < outColors.Count; i++)
                           {
@@ -193,14 +220,13 @@ class Program
                           Console.WriteLine($"BMP saved to {o.OutputFileName}");
                       }
                   }
-
                   else
                   {
                     Console.WriteLine("Cannot handle output file without .svg, .png, .jpg, or .bmp extension");
                   }
           }
       });
-    
+
   }
 
   public static int RectWidth { get; } = 100;
@@ -208,21 +234,21 @@ class Program
 
   static List<Rgba32> MedianCutQuantization(List<Rgba32> colors, Dictionary<Rgba32, int> colorCount, int k)
   {
+      if(colors.Count <= k) return colors;
+
       Cube initialCube = new Cube(colors, colorCount);
 
       List<Cube> cubes = new List<Cube> { initialCube };
-      
+
+
       while (cubes.Count < k)
       {
-          Cube largestCube = cubes.OrderByDescending(cube =>
-          {
-              int x = 0;
-              foreach (var color in cube.Colors)
-              {
-                  x += cube.ColorCount[color];
+          Cube largestCube = cubes[0];
+          foreach (var cube in cubes) {
+              if (cube.Colors.Count > largestCube.Colors.Count) {
+                  largestCube = cube;
               }
-              return x;
-          }).First();
+          }
 
           List<Cube> splitCubes = Split(largestCube);
 
@@ -230,48 +256,11 @@ class Program
           cubes.AddRange(splitCubes);
       }
 
-      List<Rgba32> clusteredColors = cubes.Select(cube => Average(cube.Colors, cube.ColorCount)).ToList();
+      List<Rgba32> clusteredColors = cubes.Select(cube => Average(cube.Colors)).ToList();
 
       return clusteredColors;
   }
 
-  static List<Rgba32> KMeansClustering(List<Rgba32> colors, Dictionary<Rgba32, int> colorCount, int k, int iter)
-  {
-
-      //List<Rgba32> clusterCenters = TopKList(colorCount, k);
-        
-      List<Rgba32> clusterCenters = InitializeRandomClusterCenters(colors, k, k * iter);
-        
-
-        List<List<Rgba32>> clusters = new List<List<Rgba32>>();
-
-        for (int iteration = 0; iteration < iter; iteration++) 
-        {
-            clusters = AssignColorsToClusters(colors, clusterCenters);
-
-            // Update cluster centers
-            List<Rgba32> newCenters = CalculateClusterCenters(clusters, colorCount);
-
-            // Check for convergence
-            bool converged = true;
-            for (int i = 0; i < k; i++)
-            {
-                if (CompareColors(clusterCenters[i], newCenters[i]) > 0)
-                {
-                    converged = false;
-                    break;
-                }
-            }
-            if (converged) {
-                break;
-            }
-
-            clusterCenters = newCenters;
-        }
-
-        return clusterCenters;
-    }
-  
   static List<Cube> Split(Cube cube)
   {
       Tuple<Rgba32,Rgba32> diff =FindMostDifferentColors(cube.Colors);
@@ -285,155 +274,108 @@ class Program
         else {
             subCube2Colors.Add(color);
         }
-      }  
+      }
 
       return new List<Cube>(){
           new Cube(subCube1Colors, cube.ColorCount),
-          new Cube(subCube2Colors, cube.ColorCount)
+          new Cube(subCube2Colors, cube.ColorCount, cube.Count-subCube1Colors.Count)
       };
   }
 
   static Tuple<Rgba32, Rgba32> FindMostDifferentColors(List<Rgba32> colors)
   {
       Rgba32 color1 = new Rgba32(0,0,0);
-      Rgba32 color2 = new Rgba32(0,0,0);;
-      double maxDistance = 0;
+      Rgba32 color2 = new Rgba32(0,0,0);
 
-      for (int i = 0; i < colors.Count; i++)
+      int[] limits = new int[]{colors[0].R, colors[0].R, colors[0].G, colors[0].G, colors[0].B, colors[0].B};
+      List<Rgba32>[] colorGroups = new List<Rgba32>[6];
+      for(int i = 0; i < 6; i++) {
+          colorGroups[i] = new List<Rgba32>();
+          colorGroups[i].Add(colors[0]);
+      }
+
+      foreach (var t in colors)
       {
-          for (int j = i + 1; j < colors.Count; j++)
-          {
-              Rgba32 c1 = colors[i];
-              Rgba32 c2 = colors[j];
-              double distance = CompareColors(c1, c2);
+          for(int j = 0; j < 3; j++) {
+              if(RgbGetAtr(t,j) < limits[j*2]) {
+                  limits[j*2] = RgbGetAtr(t,j);
+                  colorGroups[j*2].Clear();
+                  colorGroups[j*2].Add(t);
+              } else if(RgbGetAtr(t,j) == limits[j*2]) {
+                  colorGroups[j*2].Add(t);
+              }
+              if(RgbGetAtr(t,j) > limits[j*2+1]) {
+                  limits[j*2+1] = RgbGetAtr(t,j);
+                  colorGroups[j*2+1].Clear();
+                  colorGroups[j*2+1].Add(t);
+              } else if(RgbGetAtr(t,j) == limits[j*2+1]) {
+                  colorGroups[j*2+1].Add(t);
+              }
 
-              if (distance > maxDistance)
-              {
-                  maxDistance = distance;
-                  color1 = c1;
-                  color2 = c2;
+          }
+      }
+      int maxDistance = 0;
+      for (int i = 0; i < 3; i++) {
+          foreach (var first in colorGroups[i*2]) {
+              foreach (var second in colorGroups[i*2+1]) {
+                  int distance = CompareColors(first, second);
+                  if (distance > maxDistance) {
+                        maxDistance = distance;
+                        color1 = first;
+                        color2 = second;
+                  }
               }
           }
       }
 
+
       return new Tuple<Rgba32, Rgba32>(color1, color2);
   }
-    static List<Rgba32> InitializeRandomClusterCenters(List<Rgba32> colors, int k, int seed = 0)
-    {
-        Random rand = new Random(seed);
-        
-        List<Rgba32> clusterCenters = new List<Rgba32>();
-
-        for (int i = 0; i < k; i++)
-        {
-            int randomIndex = rand.Next(colors.Count);
-            clusterCenters.Add(colors[randomIndex]);
-        }
-
-        return clusterCenters;
-    }
-
-    static List<List<Rgba32>> AssignColorsToClusters(List<Rgba32> colors, List<Rgba32> clusterCenters)
-    {
-        List<List<Rgba32>> clusters = new List<List<Rgba32>>();
-        for (int i = 0; i < clusterCenters.Count; i++)
-        {
-            clusters.Add(new List<Rgba32>());
-        }
-
-        foreach (Rgba32 color in colors)
-        {
-            int closestClusterIndex = FindClosestClusterIndex(color, clusterCenters);
-            clusters[closestClusterIndex].Add(color);
-        }
-
-        return clusters;
-    }
-
-    static List<Rgba32> CalculateClusterCenters(List<List<Rgba32>> clusters, Dictionary<Rgba32, int> colorCount)
-    {
-        List<Rgba32> newCenters = new List<Rgba32>();
-
-        foreach (var cluster in clusters)
-        {
-            if (cluster.Count == 0)
-            {
-                newCenters.Add(new Rgba32(0,0,0));
-            }
-            else
-            {
-              Rgba32 average = Average(cluster, colorCount);
-              newCenters.Add(FindClosestClusterColor(average, cluster));
-            }
-        }
-
-        return newCenters;
-    }
-
-    static int FindClosestClusterIndex(Rgba32 color, List<Rgba32> clusterCenters)
-    {
-        int closestIndex = 0;
-        double closestDistance = CompareColors(color, clusterCenters[0]);
-
-        for (int i = 1; i < clusterCenters.Count; i++)
-        {
-            double distance = CompareColors(color, clusterCenters[i]);
-            if (distance < closestDistance)
-            {
-                closestIndex = i;
-                closestDistance = distance;
-            }
-        }
-
-        return closestIndex;
-    }
-
-    
-
     static Rgba32 FindClosestClusterColor(Rgba32 pixel, List<Rgba32> clusterColors)
     {
         Rgba32 closestColor = clusterColors[0];
-        double closestDistance = CompareColors(pixel, closestColor);
+        int closestDistance = CompareColors(pixel, closestColor);
 
         foreach (var color in clusterColors)
         {
-            double distance = CompareColors(pixel, color);
+            int distance = CompareColors(pixel, color);
             if (distance < closestDistance)
             {
                 closestColor = color;
                 closestDistance = distance;
             }
         }
-
         return closestColor;
     }
 
-  static double CompareColors(Rgba32 a, Rgba32 b)
-  {
-    var aHsv = SixLabors.ImageSharp.ColorSpaces.Conversion.ColorSpaceConverter.ToHsv(a);
-    var bHsv = SixLabors.ImageSharp.ColorSpaces.Conversion.ColorSpaceConverter.ToHsv(b);
-    var dh = Math.Min(Math.Abs(aHsv.H - bHsv.H), 360 - Math.Abs(aHsv.H - bHsv.H))/180;
-    var ds = Math.Abs(aHsv.S - bHsv.S);
-    var dv = Math.Abs(aHsv.V - bHsv.V)/255;
-    return Math.Sqrt(dh*dh+ds*ds+dv*dv);
+  static int CompareColors(Rgba32 a, Rgba32 b) {
+        return (a.R - b.R)*(a.R - b.R) + (a.G - b.G)*(a.G - b.G) + (a.B - b.B)*(a.B - b.B);
   }
-  static Rgba32 Average(List<Rgba32> colors, Dictionary<Rgba32, int> colorCount)
-  {
-    var hue = 0f;
-    var saturation = 0f;
-    var value = 0f;
-    int total = 0;
-    foreach (var color in colors)
-    {
-      var hsv = SixLabors.ImageSharp.ColorSpaces.Conversion.ColorSpaceConverter.ToHsv(color);
-      hue += hsv.H * colorCount[color];
-      saturation += hsv.S * colorCount[color];
-      value += hsv.V * colorCount[color];
-      total += colorCount[color];
-    }
-    hue /= total;
-    saturation /= total;
-    value /= total;
-    return SixLabors.ImageSharp.ColorSpaces.Conversion.ColorSpaceConverter.ToRgb(new Hsv(hue, saturation, value));
+  static Rgba32 Average(List<Rgba32> colors) {
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        foreach (var color in colors)
+        {
+            r += color.R;
+            g += color.G;
+            b += color.B;
+        }
+        r /= colors.Count;
+        g /= colors.Count;
+        b /= colors.Count;
+        return FindClosestClusterColor(new Rgba32((byte)r, (byte)g, (byte)b), colors);
+  }
+  static byte RgbGetAtr(Rgba32 color, int atr) {
+      switch(atr) {
+          case 0:
+            return color.R;
+          case 1:
+            return color.G;
+          case 2:
+            return color.B;
+          default:
+            return 0;
+      }
   }
 }
