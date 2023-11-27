@@ -4,6 +4,7 @@ namespace Mandala;
 
 public class MyDraw
 {
+  private const int DEVIDER = 400;
     static void DrawSymmetryLines(Image<Rgba32> image, Vector2 center, Rgba32 color, int symmetryOrder)
     {
         int length = 400;
@@ -25,12 +26,14 @@ public class MyDraw
         {
             float lenght = (float)Math.Sqrt(Math.Pow(image.Width, 2) + Math.Pow(image.Height, 2))/2;
             Rgba32 color = colors[0];
-            int steps = (int)(lenght / 4);
-            Vector3 diff = Differ(colors[0], colors[1], steps);  
+            int steps = smallestStep(colors[0], colors[1]);
+            int thick = lenght/steps < 1 ? 1 : (int) Math.Ceiling(lenght/steps);
+            Vector3 diff = Differ(colors[0], colors[1], steps);
             image.Mutate(x => x.Fill(colors[1]));
-            for (float i = 0; i < lenght + 5; i+=3) {
-                DrawRing(image, i,i + 4,200, color, new Vector2((float)image.Width/2, (float)image.Height/2),true);
+            for (float i = 0; i < lenght ; i+=thick-1) {
+                DrawRing(image, i,i + thick,200, color, new Vector2((float)image.Width/2, (float)image.Height/2),true);
                 color = AddRgba32(color, diff);
+                if(color == colors[1]) break;
             }
         }
     }
@@ -48,18 +51,18 @@ public class MyDraw
     }
 
 
-    //creates the points 
+    //creates the points
     static Vector2[] CreateTriangle(float innerRadius, float outerRadius, float rotation,
         Vector2 center, float start, float end, float outer, int symmetryOrder) {
         float angle = 2 * (float)Math.PI / symmetryOrder;
-        
+
             //easiest shape is triangle so we just start with that
 
             Vector2 innerPoint1 = GetPointOnCircle(innerRadius, angle, rotation, start, center);
             Vector2 innerPoint2 = GetPointOnCircle(innerRadius, angle, rotation, end, center);
             Vector2 outerPoint = GetPointOnCircle(outerRadius, angle, rotation, outer, center);
             return new []{ innerPoint1, outerPoint, innerPoint2 };
-        
+
     }
 
     /// <summary>
@@ -75,8 +78,9 @@ public class MyDraw
     /// <param name="end"></param>
     /// <param name="outer"></param>
     /// <param name="isFilled"></param>
-    public static void DrawTriangles(Image<Rgba32> image, float  innerRadius, float outerRadius, int symmetryOrder, 
+    public static void DrawTriangles(Image<Rgba32> image, float  innerRadius, float outerRadius, int symmetryOrder,
         Rgba32 color, Vector2 center, float start, float end, float outer, bool isFilled = false) {
+      int thickness = Math.Min(image.Width, image.Height) / DEVIDER;
         for (int i = 0; i < symmetryOrder; i++) {
             //easiest shape is triangle so we just start with that
             PointF[] points = VectToPointFs(CreateTriangle( innerRadius, outerRadius, i,  center, start,
@@ -87,14 +91,14 @@ public class MyDraw
                 image.Mutate(x => x.Fill(color, path => path.AddLines(points)));
             }
             else {
-                image.Mutate(x => x.DrawLine(color, 1, points));
+                image.Mutate(x => x.DrawLine(color, thickness, points));
             }
         }
     }
-    
-    
+
+
     /// <summary>
-    /// Draws a circle 
+    /// Draws a circle
     /// </summary>
     /// <param name="image"></param>
     /// <param name="radius"></param>
@@ -105,9 +109,9 @@ public class MyDraw
     public static void DrawCircle(Image<Rgba32> image, float radius, int precision, Rgba32 color, Vector2 center, bool isFilled=false) {
         DrawCirclePart(image, 0, radius, 2*(float)Math.PI, 0, precision, color, center, isFilled );
     }
-    
+
     /// <summary>
-    /// Draws a circle part 
+    /// Draws a circle part
     /// </summary>
     /// <param name="image"></param>
     /// <param name="innerRadius"></param>
@@ -116,11 +120,11 @@ public class MyDraw
     /// <param name="color"></param>
     /// <param name="center"></param>
     /// <param name="isFilled"></param>
-    public static void DrawRing(Image<Rgba32> image, float innerRadius, float outerRadius, int precision, Rgba32 color, 
+    public static void DrawRing(Image<Rgba32> image, float innerRadius, float outerRadius, int precision, Rgba32 color,
         Vector2 center, bool isFilled=true) {
         DrawCirclePart(image, innerRadius, outerRadius, 2*(float)Math.PI, 0, precision, color, center, true );
     }
-    
+
     /// <summary>
     /// Draws a circle part as a curve not working Properly yet
     /// </summary>
@@ -138,20 +142,20 @@ public class MyDraw
     {
         Vector2[] points = CreateCircularLine(innerRadius, center, angle, rotation, precision);
         float littleRadius = innerRadius * (float)Math.Sin(angle / 2);
-        
+
         #region GetRotationOfSmallCircle  -->  distance float is in here
         //get to analytic geometry
-        
+
         Vector2 pointA = GetPointOnCircle(innerRadius, angle, rotation, 0, center);
         Vector2 pointB = GetPointOnCircle(innerRadius, angle, rotation, .5f, center);
-        
+
         Vector3 lineBC = new Vector3(1, 0,-pointB.X); //x,y,z are for a, b, c in  ax+by+c=0
-        
+
         //distance from point A to line BC is (a*x+b*y+c)/sqrt(a^2+b^2) --> a=1, b=0, c=-pointB.X
         float distance = (float)Math.Abs(pointA.X + lineBC.Z)/(float)Math.Sqrt(1);
-        
+
         #endregion
-        
+
         float littleAngle = (float)Math.Asin(distance / littleRadius);
 
         switch (rotation*angle) {
@@ -171,7 +175,7 @@ public class MyDraw
 
         Vector2[] points2 = CreateCircularLine(littleRadius, GetPointOnCircle(innerRadius, angle, rotation, 0.5f, center)
             , actualAngle, littleAngle/actualAngle  , precision);
-        
+
         if (isFilled) {
             image.Mutate(x => x.Fill(color, path => path.AddLines(VectToPointFs(points.Concat(points2.Reverse()).Append(points[0]).ToArray()))));
         }
@@ -180,9 +184,9 @@ public class MyDraw
         }
         return innerRadius + littleRadius;
     }
-    
+
     /// <summary>
-    /// Draws a circle part with rotational symmetry 
+    /// Draws a circle part with rotational symmetry
     /// </summary>
     /// <param name="image"></param>
     /// <param name="innerRadius"></param>
@@ -225,11 +229,11 @@ public class MyDraw
         float angle = 2 * (float) Math.PI / symmetryOrder;
         for (int i = 0; i < symmetryOrder; i++)
         {
-            DrawCircle(image, cirRadius, 48, color, 
+            DrawCircle(image, cirRadius, 48, color,
                 GetPointOnCircle(cirRadius+innerRadius, angle, i, 0.5f, center), isFilled);
         }
     }
-    
+
     /// <summary>
     /// Function to draw a part of a circle with a given inner and outer radius, angle and starting rotation
     /// </summary>
@@ -245,7 +249,9 @@ public class MyDraw
     public static void DrawCirclePart(Image<Rgba32> image, float innerRadius, float outerRadius, float angle, float rotation,
         int precision, Rgba32 color, Vector2 center, bool isFilled = false)
     {
-        
+      int thickness = Math.Min(image.Width, image.Height) / DEVIDER;
+
+
         //Get points for outer and inner radius to make close shape must be one of the outer/inner part reversed
         Vector2[] points = CreateCircularLine(outerRadius, center, angle, rotation, precision)
             .Concat(CreateCircularLine(innerRadius, center, angle, rotation, precision).Reverse()).ToArray();
@@ -254,7 +260,7 @@ public class MyDraw
             image.Mutate(x => x.Fill(color, path => path.AddLines(VectToPointFs(points))));
         }
         else {
-            image.Mutate(x => x.DrawLine(color, 1, VectToPointFs(points.Concat(new Vector2[] {points[0]}).ToArray())));
+            image.Mutate(x => x.DrawLine(color, thickness, VectToPointFs(points.Concat(new Vector2[] {points[0]}).ToArray())));
         }
     }
 
@@ -282,9 +288,9 @@ public class MyDraw
             DrawCirclePart(image, innerRadius, outerRadius, angle * diff, (float)(i+start)/diff
                 , 50, color, center, isFilled);
         }
-        
+
     }
-    
+
     /// <summary>
     /// Draws a poligonial shape with rotational symmetry around the center
     /// </summary>
@@ -302,6 +308,8 @@ public class MyDraw
     public static void DrawDiamonds(Image<Rgba32> image, float innerRadius, float outerRadius, float middleRadius, int symmetryOrder,
         Rgba32 color, Vector2 center, float start, float end, bool isFilled = false)
     {
+      int thickness = Math.Min(image.Width, image.Height) / DEVIDER;
+
         float angle = 2 * (float) Math.PI / symmetryOrder;
         float diff = end - start;
         if (diff < 0) throw new Exception("Start is bigger than end");
@@ -316,14 +324,14 @@ public class MyDraw
                 image.Mutate(x => x.Fill(color, path => path.AddLines(points)));
             }
             else {
-                image.Mutate(x => x.DrawLine(color, 1, points));
+                image.Mutate(x => x.DrawLine(color, thickness, points));
             }
         }
     }
 
     static void DrawSymmetric(Image<Rgba32> image, float innerRadius, float outerRadius, int symmetryOrder,
          Action<List<Object>> draw) {
-        
+
     }
 
     static PointF VectToPointF(Vector2 from) {
@@ -338,7 +346,7 @@ public class MyDraw
         return to;
     }
 
-    public static Vector3 Differ(Rgba32 from, Rgba32 to, int stepCount)
+    static Vector3 Differ(Rgba32 from, Rgba32 to, int stepCount)
     {
         float rDiff = to.R - from.R;
         float gDiff = to.G - from.G;
@@ -347,15 +355,34 @@ public class MyDraw
         return new Vector3(rDiff / stepCount, gDiff / stepCount, bDiff / stepCount);
     }
 
-    public static Rgba32 AddRgba32(Rgba32 one, Vector3 two)
+
+    static int smallestStep(Rgba32 from, Rgba32 to)
+    {
+      int smallest = 1;
+      Vector3 diff;
+      for(int i=400; i > 0; i--)
+      {
+        diff = Differ(from, to, i);
+        Rgba32 color = from;
+        for (int j = 0; j < i; j++)
+        {
+          color = AddRgba32(color, diff);
+        }
+
+        if (color == to)
+          return i;
+      }
+      return smallest;
+    }
+    static Rgba32 AddRgba32(Rgba32 one, Vector3 two)
     {
         one.R += (byte)two.X;
         one.G += (byte)two.Y;
         one.B += (byte)two.Z;
-        
+
         return one;
     }
-    
+
     // same formula all over the place Vector2 where is some radius * cos(angle*i + part of angle) and sin(angle*i + part of angle)
     /// <param name="radius">radius is the radius of the circle</param>
     /// <param name="angle">angle is the angle between the x = radius y = 0 and the wanted point</param>
@@ -364,7 +391,7 @@ public class MyDraw
     /// <param name="center">center is center of circle we are on</param>
     /// <returns></returns>
     static Vector2 GetPointOnCircle(float radius, float angle,float rotation, float partOfAngle, Vector2 center) {
-        return center + new Vector2(radius * (float)Math.Cos(rotation * angle + partOfAngle * angle), radius * 
+        return center + new Vector2(radius * (float)Math.Cos(rotation * angle + partOfAngle * angle), radius *
             (float)Math.Sin(rotation * angle + partOfAngle * angle));
     }
 }
