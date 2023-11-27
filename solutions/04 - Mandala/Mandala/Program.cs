@@ -13,26 +13,26 @@ public class Options
     public int Width { get; set; } = 800;
     [Option('h', "height", Required = true, Default = "", HelpText = "Height of the image")]
     public int Height { get; set; } = 800;
-    
+
     [Option('s', "symmetry", Required = false, Default = 6, HelpText = "Symmetry order")]
     public int Symmetry { get; set; } = 6;
-    
-    [Option('f', "figures", Required = false, Default = "all", HelpText = 
+
+    [Option('f', "figures", Required = false, Default = "all", HelpText =
         "Figures to draw (all, circles, triangles, diamonds, roundedSquares, ring) use initials " +
         "(s for squares))and number as multiplier (s2 for squares with 2x multiplier) and f for fill (sf for filled squares or s2f for filled 2x multiplied)")]
     public string Figures { get; set; } = "all";
-    
-    [Option('c', "colors", Required = false, Default = "all", HelpText = 
+
+    [Option('c', "colors", Required = false, Default = "all", HelpText =
         "Colors to use (red, green, blue, yellow, magenta, cyan, purple) use initials")]
     public string Colors { get; set; } = "all";
-    
-    [Option('b', "background", Required = false, Default = "gradient", HelpText = 
-        "Background color (red, green, blue, yellow, magenta, cyan, purple, black, white) or circular gradient format: 'from'x'to'")]   
+
+    [Option('b', "background", Required = false, Default = "gradient", HelpText =
+        "Background color (red, green, blue, yellow, magenta, cyan, purple, black, white) or circular gradient format: 'from'x'to'")]
     public string Background { get; set; } = "gradient";
 
     [Option('o', "output", Required = true, Default = "", HelpText = "Output file name")]
     public string FileName { get; set; } = "Mandala.png";
-    
+
     [Option('l',"overlap", Required = false, Default = 0f, HelpText = "Overlap between figures in percentage")]
     public float Overlap { get; set; } = 0;
 }
@@ -41,7 +41,7 @@ public class Options
 
 class Program
 {
-    
+
     const int Precision = 50;
     private static readonly Rgba32 Red = new Rgba32(255, 0, 0);
     private static readonly Rgba32 Green = new Rgba32(0, 255, 0);
@@ -62,7 +62,7 @@ class Program
         public int Symmetry { get; set; }
         public Rgba32 Color { get; set; }
         public bool Fill { get; set; }
-        
+
         public Figure(Figures type, float start, float end, int symmetry, Rgba32 color, bool fill)
         {
             Type = type;
@@ -77,7 +77,7 @@ class Program
             Start = start;
             End = end;
         }
-        
+
     }
 
     static void Main(string[] args)
@@ -91,7 +91,7 @@ class Program
                 Vector2 center = new Vector2((float)o.Width / 2, (float)o.Height / 2);
                 // Create a random number generator
                 Random rand = new Random();
-                
+
                 // Draw the background
                 if (o.Background == "gradient") {
                     List<Rgba32> cols = new List<Rgba32> {Red, Green, Blue, Yellow, Magenta, Cyan, Purple, White, Black};
@@ -104,12 +104,12 @@ class Program
                 else {
                     DrawBackground(image, GetColor(o.Background));
                 }
-                
+
                 float maxRadius = (float)Math.Min(o.Width, o.Height) / 2;
-                
+
                 // Setups the figures to draw
-                
-                
+
+
                 List<Rgba32> colors = new List<Rgba32>();
                 if (o.Colors == "all" || o.Colors == ""){
                     List<Rgba32> colorsList = new List<Rgba32> {Red, Green, Blue, Yellow, Magenta, Cyan, Purple};
@@ -121,7 +121,7 @@ class Program
                         colorsList.Remove(colorsList[index]);
                     }
                 }
-                
+
                 else {
                     foreach (char c in o.Colors)
                     {
@@ -148,7 +148,7 @@ class Program
                         colors.Add(Purple);
                     }
                 }
-                
+
                 List<Figure> figures = new List<Figure>();
                 if (o.Figures == "all" || o.Figures == "")
                 {
@@ -238,19 +238,19 @@ class Program
                         }
                     }
                 }
-                
-                
+
+
                 CalculateRadius radius = new CalculateRadius(maxRadius, figures.Count, o.Overlap);
                 for (int i = 0; i < figures.Count; i++)
                 {
                     Tuple<float, float> r = radius.Next();
-                    
+
                     //cause struct in array are immutable
                     Figure f = figures[i];
                     f.SetRadius(r.Item1, r.Item2);
                     figures[i] = f;
                 }
-                
+
                 foreach (Figure f in figures)
                 {
                     switch (f.Type)
@@ -275,9 +275,9 @@ class Program
                             break;
                     }
                 }
-                
+
                 //DrawCrescents(image, 320, o.Symmetry , 100, Red, center, .1f, 0.9f, true);
-                
+
                 image.Save(o.FileName);
             }
         });
@@ -292,6 +292,7 @@ class Program
             case "yellow": return Yellow;
             case "magenta": return Magenta;
             case "cyan": return Cyan;
+            case "purple": return Purple;
             case "black": return Black;
             case "white": return White;
             default: return White;
@@ -311,7 +312,7 @@ class CalculateRadius
     float outerRadius;
     float lastThickness;
     private Random rand;
-    
+
     public CalculateRadius(float maxRadius, int count, float overlap)
     {
         this.count = count;
@@ -340,7 +341,7 @@ class CalculateRadius
         {
             (minDelta, maxDelta) = (maxDelta, minDelta);
         }
-        
+
         return new Tuple<float, float>(innerRadius, outerRadius);
     }
 }

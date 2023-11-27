@@ -107,7 +107,12 @@ public class MyDraw
     /// <param name="center"></param>
     /// <param name="isFilled"></param>
     public static void DrawCircle(Image<Rgba32> image, float radius, int precision, Rgba32 color, Vector2 center, bool isFilled=false) {
+      if(isFilled)
         DrawCirclePart(image, 0, radius, 2*(float)Math.PI, 0, precision, color, center, isFilled );
+      else {
+        int thickness = Math.Min(image.Width, image.Height) / DEVIDER;
+        image.Mutate(x => x.DrawLine(color, thickness, VectToPointFs(CreateCircularLine(radius, center, 2*(float)Math.PI, 0, precision))));
+      }
     }
 
     /// <summary>
