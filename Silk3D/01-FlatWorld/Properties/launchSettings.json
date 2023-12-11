@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "01-FlatWorld": {
+      "commandName": "Project",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "08-Fireworks": {
+      "commandName": "Project",
+      "commandLineArgs": "-p 1000",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}

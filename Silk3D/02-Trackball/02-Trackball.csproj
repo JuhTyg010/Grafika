@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>_02_trackball</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Silk\placeholder" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\shared\BufferObject.cs" Link="Silk\BufferObject.cs" />
+    <Compile Include="..\shared\Shader.cs" Link="Silk\Shader.cs" />
+    <Compile Include="..\shared\Texture.cs" Link="Silk\Texture.cs" />
+    <Compile Include="..\shared\Trackball.cs" Link="Silk\Trackball.cs" />
+    <Compile Include="..\shared\Util.cs" Link="Silk\Util.cs" />
+    <Compile Include="..\shared\VertexArrayObject.cs" Link="Silk\VertexArrayObject.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Silk\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Silk.NET" Version="2.19.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
+  </ItemGroup>
+
+</Project>

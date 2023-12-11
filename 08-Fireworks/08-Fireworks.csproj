@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>_08_Fireworks</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="fireworks-KiLi.png" />
+    <None Remove="Silk\placeholder" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Silk3D\shared\BufferObject.cs" Link="Silk\BufferObject.cs" />
+    <Compile Include="..\Silk3D\shared\Shader.cs" Link="Silk\Shader.cs" />
+    <Compile Include="..\Silk3D\shared\Texture.cs" Link="Silk\Texture.cs" />
+    <Compile Include="..\Silk3D\shared\Trackball.cs" Link="Silk\Trackball.cs" />
+    <Compile Include="..\Silk3D\shared\Util.cs" Link="Silk\Util.cs" />
+    <Compile Include="..\Silk3D\shared\VertexArrayObject.cs" Link="Silk\VertexArrayObject.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Silk\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Silk.NET" Version="2.19.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
+  </ItemGroup>
+
+</Project>

@@ -31,6 +31,13 @@ it works well on Windows, Linux and macOS.
 We use `Visual Studio 2022`, the [Community](https://visualstudio.microsoft.com/vs/community/)
 (free) version is good enough for all tasks.
 
+## Silk.NET support & examples
+The [Silk3D directory](Silk3D/README.md) contains examples and support files for
+3D graphics using the library [Silk.NET](https://github.com/dotnet/Silk.NET/tree/main)
+([web page link](https://dotnet.github.io/Silk.NET/)).
+
+Go to the [Silk3D directory](Silk3D/README.md) for more information.
+
 ## Solutions
 Please place all your solutions in separate [solutions](solutions/README.md)
 directory in the repository. **One subdirectory per task**.
