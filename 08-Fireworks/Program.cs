@@ -25,8 +25,11 @@ public class Options
   [Option('h', "height", Required = false, Default = 600, HelpText = "Window height in pixels.")]
   public int WindowHeight { get; set; } = 600;
 
-  [Option('p', "particles", Required = false, Default = 2000, HelpText = "Number of particles.")]
-  public int particels { get; set; } = 2000;
+  [Option('p', "particles", Required = false, Default = 10000, HelpText = "Maximum number of particles.")]
+  public int Particles { get; set; } = 10000;
+
+  [Option('r', "rate", Required = false, Default = 1000.0, HelpText = "Particle generation rate per second.")]
+  public double ParticleRate { get; set; } = 1000.0;
 
   [Option('t', "texture", Required = false, Default = ":check:", HelpText = "User-defined texture.")]
   public string TextureFile { get; set; } = ":check:";
@@ -37,6 +40,8 @@ public class Options
 /// </summary>
 class Particle
 {
+  private static Random rnd = new((int)DateTime.Now.Ticks);
+
   /// <summary>
   /// Global rotation axis (all particles rotate around the same axis).
   /// </summary>
@@ -86,13 +91,35 @@ class Particle
     var m = Matrix3X3.CreateFromAxisAngle<float>(AxisDirection, (float)angle);
     Position *= m;
   }
+
   public void Reset(double now)
   {
-    Position = Vector3.Zero;
-    Color = new Vector3(1.0f, 0.7f, 0.5f);
-    Size = 3.0f;
-    Velocity = 0.6f;
-    Age = 5.5;
+    double x, y;
+    do
+    {
+      x = 0.5 * (rnd.NextDouble() + rnd.NextDouble() + rnd.NextDouble() +
+                 rnd.NextDouble() + rnd.NextDouble() + rnd.NextDouble() - 3.0);
+      y = 0.5 * (rnd.NextDouble() + rnd.NextDouble() + rnd.NextDouble() +
+                 rnd.NextDouble() + rnd.NextDouble() + rnd.NextDouble() - 3.0);
+    }
+    while (x * x + y * y > 1.0);
+    double z = 0.6 * (rnd.NextDouble() + rnd.NextDouble() + rnd.NextDouble() - 1.5);
+    double r = Math.Sqrt(x * x + y * y);
+    z *= 0.3 * Math.Exp(-4.0 * r * r);
+
+    Position = new Vector3((float)x, (float)y, (float)z);
+
+    Color = new Vector3(
+      (float)(0.3 + 0.7 * rnd.NextDouble()),
+      (float)(0.3 + 0.7 * rnd.NextDouble()),
+      (float)(0.3 + 0.7 * rnd.NextDouble()));
+
+    Size = 2.0f;
+
+    Velocity = (1.2 - r) * (0.1 + 0.07 * rnd.NextDouble());
+
+    Age = 6.0 + 4.0 * rnd.NextDouble();
+
     SimulatedTime = now;
   }
 
@@ -116,9 +143,13 @@ class Particle
     // Rotate the particle.
     Rotate(dt * Velocity);
 
-    // TODO: change particle color.
+    // Change particle color.
+    if (Age < 6.0)
+      Color *= (float)Math.Pow(0.8, dt);
 
-    // TODO: change particle size.
+    // Change particle size.
+    if (Age < 5.0)
+      Size *= (float)Math.Pow(0.8, dt);
 
     return true;
   }
@@ -157,9 +188,14 @@ public class Simulation
   private List<Particle> particles = new();
 
   /// <summary>
+  /// Actual number of particles.
+  /// </summary>
+  public int Particles => particles.Count;
+
+  /// <summary>
   /// Particle number limit.
   /// </summary>
-  private int MaxParticles;
+  public int MaxParticles { get; private set; }
 
   /// <summary>
   /// Last simulated time in seconds.
@@ -169,7 +205,15 @@ public class Simulation
   /// <summary>
   /// Number of particles generated in one second.
   /// </summary>
-  private double ParticleRate = 5000.0;
+  public double ParticleRate { get; set; }
+
+  /// <summary>
+  /// Initialize a new particle simulator.
+  /// </summary>
+  /// <param name="now">Current real time in seconds.</param>
+  /// <param name="particleRate">Maximum particle generation rate in particles per second.</param>
+  /// <param name="maxParticles">Maximum number of particles in the system (can be slightly exceeded).</param>
+  /// <param name="initParticles">Initial number of particles (the rest will be generated later).</param>
   public Simulation (double now, double particleRate, int maxParticles, int initParticles)
   {
     SimulatedTime = now;
@@ -186,7 +230,7 @@ public class Simulation
     while (number-- > 0)
     {
       // Generate one new particle.
-      particles.Add(new Particle(SimulatedTime));
+      particles.Add(new(SimulatedTime));
     }
   }
 
@@ -211,8 +255,8 @@ public class Simulation
     }
 
     // 2. Remove the dead ones.
-    foreach (var i in toRemove)
-      particles.RemoveAt(i);
+    for (var i = toRemove.Count; --i >= 0; )
+      particles.RemoveAt(toRemove[i]);
 
     // 3. Generate new ones if there is space.
     int toGenerate = Math.Min(MaxParticles - particles.Count, (int)(dt * ParticleRate));
@@ -232,26 +276,38 @@ public class Simulation
 
     return particles.Count;
   }
+
+  /// <summary>
+  /// Removes all the particles.
+  /// </summary>
+  public void Reset()
+  {
+    particles.Clear();
+  }
 }
 
 internal class Program
 {
+  // System objects.
   private static IWindow? window;
   private static GL? Gl;
 
   // VB locking (too lousy?)
   private static object renderLock = new();
 
-  // Window.
+  // Window size.
   private static float width;
   private static float height;
 
   // Trackball.
   private static Trackball? tb;
 
+  // FPS counter.
+  private static FPS fps = new();
+
   // Scene dimensions.
   private static Vector3 sceneCenter = Vector3.Zero;
-  private static float sceneDiameter = 4.0f;
+  private static float sceneDiameter = 1.5f;
 
   // Global 3D data buffer.
   private const int MAX_VERTICES = 65536;
@@ -268,6 +324,9 @@ internal class Program
   /// </summary>
   private static int vertices = 0;
 
+  public static int maxParticles = 0;
+  public static double particleRate = 1000.0;
+
   private static BufferObject<float>? Vbo;
   private static VertexArrayObject<float>? Vao;
 
@@ -283,7 +342,7 @@ internal class Program
   // Shader program.
   private static ShaderProgram? ShaderPrg;
 
-  private static DateTime now = DateTime.Now;
+  private static double nowSeconds = FPS.NowInSeconds;
 
   // Particle simulation system.
   private static Simulation? sim;
@@ -294,17 +353,37 @@ internal class Program
   private static string WindowTitle()
   {
     StringBuilder sb = new("08-Fireworks");
+
+    if (sim != null)
+    {
+      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}], rate={2:f0}", sim.Particles, sim.MaxParticles, sim.ParticleRate));
+    }
+
+    sb.Append(string.Format(CultureInfo.InvariantCulture, ", fps={0:f1}", fps.Fps));
+    if (window != null &&
+        window.VSync)
+      sb.Append(" [VSync]");
+
+    double pps = fps.Pps;
+    if (pps > 0.0)
+      if (pps < 5.0e5)
+        sb.Append(string.Format(CultureInfo.InvariantCulture, ", pps={0:f1}k", pps * 1.0e-3));
+      else
+        sb.Append(string.Format(CultureInfo.InvariantCulture, ", pps={0:f1}m", pps * 1.0e-6));
+
     if (tb != null)
     {
       sb.Append(tb.UsePerspective ? ", perspective" : ", orthographic");
       sb.Append(string.Format(CultureInfo.InvariantCulture, ", zoom={0:f2}", tb.Zoom));
     }
+
     if (useTexture &&
         texture != null &&
         texture.IsValid())
       sb.Append($", txt={texture.name}");
     else
       sb.Append(", no texture");
+
     if (usePhong)
       sb.Append(", Phong shading");
 
@@ -325,6 +404,7 @@ internal class Program
         WindowOptions options = WindowOptions.Default;
         options.Size = new Vector2D<int>(o.WindowWidth, o.WindowHeight);
         options.Title = WindowTitle();
+        options.VSync = true;
 
         window = Window.Create(options);
         width  = o.WindowWidth;
@@ -336,6 +416,8 @@ internal class Program
         window.Resize  += OnResize;
 
         textureFile = o.TextureFile;
+        maxParticles = Math.Min(MAX_VERTICES, o.Particles);
+        particleRate = o.ParticleRate;
 
         window.Run();
       });
@@ -383,7 +465,7 @@ internal class Program
     {
       // Initialize the simulation object and fill the VB.
       Particle.AxisDirection = Vector3.UnitZ;
-      sim = new Simulation(0.0, 4000.0, 2000, 500);
+      sim = new Simulation(nowSeconds, particleRate, maxParticles, maxParticles / 10);
       vertices = sim.FillBuffer(vertexBuffer);
 
       // Vertex Array Object = Vertex buffer + Index buffer.
@@ -472,11 +554,18 @@ internal class Program
     lock (renderLock)
     {
       // Simulation the particle system.
+      nowSeconds = FPS.NowInSeconds;
+      if (sim != null)
+      {
+        sim.SimulateTo(nowSeconds);
+        vertices = sim.FillBuffer(vertexBuffer);
+      }
 
       // Rendering properties (set in every frame for clarity).
       Gl.Enable(GLEnum.DepthTest);
       Gl.PolygonMode(GLEnum.FrontAndBack, GLEnum.Fill);
       Gl.Disable(GLEnum.CullFace);
+      Gl.Enable(GLEnum.VertexProgramPointSize);
 
       // Draw the scene (set of Object-s).
       VaoPointers();
@@ -515,6 +604,9 @@ internal class Program
 
         // Draw the batch of points.
         Gl.DrawArrays((GLEnum)PrimitiveType.Points, 0, (uint)vertices);
+
+        // Update Pps.
+        fps.AddPrimitives(vertices);
       }
     }
 
@@ -522,6 +614,10 @@ internal class Program
     Gl.UseProgram(0);
     if (useTexture)
       Gl.BindTexture(TextureTarget.Texture2D, 0);
+
+    // FPS.
+    if (fps.AddFrames())
+      SetWindowTitle();
   }
 
   /// <summary>
@@ -558,7 +654,7 @@ internal class Program
         tb.KeyDown(arg1, arg2, arg3))
     {
       SetWindowTitle();
-      return;
+      //return;
     }
 
     switch (arg2)
@@ -577,21 +673,21 @@ internal class Program
         // Toggle texture.
         useTexture = !useTexture;
         if (useTexture)
-          Util.Util.Message($"Texture: {texture?.name}");
+          Ut.Message($"Texture: {texture?.name}");
         else
-          Util.Util.Message("Texturing off");
+          Ut.Message("Texturing off");
         SetWindowTitle();
         break;
 
       case Key.I:
         // Toggle Phong shading.
         usePhong = !usePhong;
-         Util.Util.Message("Phong shading: " + (usePhong ? "on" : "off"));
+         Ut.Message("Phong shading: " + (usePhong ? "on" : "off"));
         SetWindowTitle();
         break;
 
       case Key.P:
-        // Reset view.
+        // Perspective <-> orthographic.
         if (tb != null)
         {
           tb.UsePerspective = !tb.UsePerspective;
@@ -604,21 +700,65 @@ internal class Program
         if (tb != null)
         {
           tb.Reset();
-          Util.Util.Message("Camera reset");
+          Ut.Message("Camera reset");
+        }
+        break;
+
+      case Key.V:
+        // Toggle VSync.
+        if (window != null)
+        {
+          window.VSync = !window.VSync;
+          if (window.VSync)
+          {
+            Ut.Message("VSync on");
+            fps.Reset();
+          }
+          else
+            Ut.Message("VSync off");
+        }
+        break;
+
+      case Key.R:
+        // Reset the simulator.
+        if (sim != null)
+        {
+          sim.Reset();
+          Ut.Message("Simulator reset");
+        }
+        break;
+
+      case Key.Up:
+        // Increase particle generation rate.
+        if (sim != null)
+        {
+          sim.ParticleRate *= 1.1;
+          SetWindowTitle();
+        }
+        break;
+
+      case Key.Down:
+        // Decrease particle generation rate.
+        if (sim != null)
+        {
+          sim.ParticleRate /= 1.1;
+          SetWindowTitle();
         }
         break;
 
       case Key.F1:
         // Help.
-        Util.Util.Message("T           toggle texture", true);
-        Util.Util.Message("I           toggle Phong shading", true);
-        Util.Util.Message("P           toggle perspective", true);
-        Util.Util.Message("C           camera reset", true);
-        Util.Util.Message("Home        reset the object", true);
-        Util.Util.Message("F1          print help", true);
-        Util.Util.Message("Esc         quit the program", true);
-        Util.Util.Message("Mouse.left  Trackball rotation", true);
-        Util.Util.Message("Mouse.wheel zoom in/out", true);
+        Ut.Message("T           toggle texture", true);
+        Ut.Message("I           toggle Phong shading", true);
+        Ut.Message("P           toggle perspective", true);
+        Ut.Message("V           toggle VSync", true);
+        Ut.Message("C           camera reset", true);
+        Ut.Message("R           reset the simulation", true);
+        Ut.Message("Up, Down    change particle generation rate", true);
+        Ut.Message("F1          print help", true);
+        Ut.Message("Esc         quit the program", true);
+        Ut.Message("Mouse.left  Trackball rotation", true);
+        Ut.Message("Mouse.wheel zoom in/out", true);
         break;
 
       case Key.Escape:
@@ -681,7 +821,7 @@ internal class Program
 
     if (btn == MouseButton.Right)
     {
-      Util.Util.MessageInvariant($"Right button down: {mouse.Position}");
+      Ut.MessageInvariant($"Right button down: {mouse.Position}");
 
       // Start dragging.
       dragging = true;
@@ -702,7 +842,7 @@ internal class Program
 
     if (btn == MouseButton.Right)
     {
-      Util.Util.MessageInvariant($"Right button up: {mouse.Position}");
+      Ut.MessageInvariant($"Right button up: {mouse.Position}");
 
       // Stop dragging.
       dragging = false;
@@ -721,7 +861,7 @@ internal class Program
 
     if (mouse.IsButtonPressed(MouseButton.Right))
     {
-      Util.Util.MessageInvariant($"Mouse drag: {xy}");
+      Ut.MessageInvariant($"Mouse drag: {xy}");
     }
 
     // Object dragging.
@@ -753,7 +893,7 @@ internal class Program
   {
     if (btn == MouseButton.Right)
     {
-      Util.Util.Message("Closed by double-click.", true);
+      Ut.Message("Closed by double-click.", true);
       window?.Close();
     }
   }
@@ -772,6 +912,6 @@ internal class Program
     }
 
     // wheel.Y is -1 or 1
-    Util.Util.MessageInvariant($"Mouse scroll: {wheel.Y}");
+    Ut.MessageInvariant($"Mouse scroll: {wheel.Y}");
   }
 }

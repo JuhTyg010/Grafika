@@ -102,6 +102,9 @@ internal class Program
   // Trackball.
   private static Trackball? tb;
 
+  // FPS counter.
+  private static FPS fps = new();
+
   // Scene dimensions.
   private static Vector3 sceneCenter = Vector3.Zero;
   private static float sceneDiameter = 4.0f;
@@ -172,17 +175,32 @@ internal class Program
   private static string WindowTitle()
   {
     StringBuilder sb = new("07-Terrain");
+
+    sb.Append(string.Format(CultureInfo.InvariantCulture, ", fps={0:f1}", fps.Fps));
+    if (window != null &&
+        window.VSync)
+      sb.Append(" [VSync]");
+
+    double pps = fps.Pps;
+    if (pps > 0.0)
+      if (pps < 5.0e5)
+        sb.Append(string.Format(CultureInfo.InvariantCulture, ", pps={0:f1}k", pps * 1.0e-3));
+      else
+        sb.Append(string.Format(CultureInfo.InvariantCulture, ", pps={0:f1}m", pps * 1.0e-6));
+
     if (tb != null)
     {
       sb.Append(tb.UsePerspective ? ", perspective" : ", orthographic");
       sb.Append(string.Format(CultureInfo.InvariantCulture, ", zoom={0:f2}", tb.Zoom));
     }
+
     if (useTexture &&
         texture != null &&
         texture.IsValid())
       sb.Append($", txt={texture.name}");
     else
       sb.Append(", no texture");
+
     if (usePhong)
       sb.Append(", Phong shading");
 
@@ -203,6 +221,7 @@ internal class Program
         WindowOptions options = WindowOptions.Default;
         options.Size = new Vector2D<int>(o.WindowWidth, o.WindowHeight);
         options.Title = WindowTitle();
+        options.VSync = true;
 
         window = Window.Create(options);
         width  = o.WindowWidth;
@@ -418,6 +437,9 @@ internal class Program
 
         // Draw the batch.
         Gl.DrawElements(o.Type, (uint)o.Indices, DrawElementsType.UnsignedInt, (void*)(o.BufferOffset * sizeof(float)));
+
+        // Update Pps.
+        fps.AddPrimitives(o.Indices / 3);
       }
     }
 
@@ -425,6 +447,10 @@ internal class Program
     Gl.UseProgram(0);
     if (useTexture)
       Gl.BindTexture(TextureTarget.Texture2D, 0);
+
+    // FPS.
+    if (fps.AddFrames())
+      SetWindowTitle();
   }
 
   /// <summary>
@@ -479,7 +505,7 @@ internal class Program
         tb.KeyDown(arg1, arg2, arg3))
     {
       SetWindowTitle();
-      return;
+      //return;
     }
 
     switch (arg2)
@@ -506,21 +532,21 @@ internal class Program
         // Toggle texture.
         useTexture = !useTexture;
         if (useTexture)
-          Util.Util.Message($"Texture: {texture?.name}");
+          Ut.Message($"Texture: {texture?.name}");
         else
-          Util.Util.Message("Texturing off");
+          Ut.Message("Texturing off");
         SetWindowTitle();
         break;
 
       case Key.I:
         // Toggle Phong shading.
         usePhong = !usePhong;
-         Util.Util.Message("Phong shading: " + (usePhong ? "on" : "off"));
+         Ut.Message("Phong shading: " + (usePhong ? "on" : "off"));
         SetWindowTitle();
         break;
 
       case Key.P:
-        // Reset view.
+        // Perspective <-> orthographic.
         if (tb != null)
         {
           tb.UsePerspective = !tb.UsePerspective;
@@ -533,7 +559,22 @@ internal class Program
         if (tb != null)
         {
           tb.Reset();
-          Util.Util.Message("Camera reset");
+          Ut.Message("Camera reset");
+        }
+        break;
+
+      case Key.V:
+        // Toggle VSync.
+        if (window != null)
+        {
+          window.VSync = !window.VSync;
+          if (window.VSync)
+          {
+            Ut.Message("VSync on");
+            fps.Reset();
+          }
+          else
+            Ut.Message("VSync off");
         }
         break;
 
@@ -563,18 +604,19 @@ internal class Program
 
       case Key.F1:
         // Help.
-        Util.Util.Message("T           toggle texture", true);
-        Util.Util.Message("I           toggle Phong shading", true);
-        Util.Util.Message("P           toggle perspective", true);
-        Util.Util.Message("C           camera reset", true);
-        Util.Util.Message("Up, Down    update the vertex", true);
-        Util.Util.Message("Left, Right rotate the object", true);
-        Util.Util.Message("Home        reset the object", true);
-        Util.Util.Message("F1          print help", true);
-        Util.Util.Message("Esc         quit the program", true);
-        Util.Util.Message("Mouse.left  Trackball rotation", true);
-        Util.Util.Message("Mouse.right drag current object", true);
-        Util.Util.Message("Mouse.wheel zoom in/out", true);
+        Ut.Message("T           toggle texture", true);
+        Ut.Message("I           toggle Phong shading", true);
+        Ut.Message("P           toggle perspective", true);
+        Ut.Message("V           toggle VSync", true);
+        Ut.Message("C           camera reset", true);
+        Ut.Message("Up, Down    update the vertex", true);
+        Ut.Message("Left, Right rotate the object", true);
+        Ut.Message("Home        reset the object", true);
+        Ut.Message("F1          print help", true);
+        Ut.Message("Esc         quit the program", true);
+        Ut.Message("Mouse.left  Trackball rotation", true);
+        Ut.Message("Mouse.right drag current object", true);
+        Ut.Message("Mouse.wheel zoom in/out", true);
         break;
 
       case Key.Escape:
@@ -637,7 +679,7 @@ internal class Program
 
     if (btn == MouseButton.Right)
     {
-      Util.Util.MessageInvariant($"Right button down: {mouse.Position}");
+      Ut.MessageInvariant($"Right button down: {mouse.Position}");
 
       // Start dragging.
       dragging = true;
@@ -658,7 +700,7 @@ internal class Program
 
     if (btn == MouseButton.Right)
     {
-      Util.Util.MessageInvariant($"Right button up: {mouse.Position}");
+      Ut.MessageInvariant($"Right button up: {mouse.Position}");
 
       // Stop dragging.
       dragging = false;
@@ -677,7 +719,7 @@ internal class Program
 
     if (mouse.IsButtonPressed(MouseButton.Right))
     {
-      Util.Util.MessageInvariant($"Mouse drag: {xy}");
+      Ut.MessageInvariant($"Mouse drag: {xy}");
     }
 
     // Object dragging.
@@ -709,7 +751,7 @@ internal class Program
   {
     if (btn == MouseButton.Right)
     {
-      Util.Util.Message("Closed by double-click.", true);
+      Ut.Message("Closed by double-click.", true);
       window?.Close();
     }
   }
@@ -728,6 +770,6 @@ internal class Program
     }
 
     // wheel.Y is -1 or 1
-    Util.Util.MessageInvariant($"Mouse scroll: {wheel.Y}");
+    Ut.MessageInvariant($"Mouse scroll: {wheel.Y}");
   }
 }

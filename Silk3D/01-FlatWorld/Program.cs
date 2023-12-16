@@ -402,13 +402,13 @@ internal class Program
 
       case Key.F1:
         // Help.
-        Util.Util.Message("+           new current object", true);
-        Util.Util.Message("-           delete current object", true);
-        Util.Util.Message("Home        reset current object", true);
-        Util.Util.Message("F1          print help", true);
-        Util.Util.Message("Esc         quit the program", true);
-        Util.Util.Message("Mouse.left  drag current object", true);
-        Util.Util.Message("Mouse.wheel rotate current object", true);
+        Ut.Message("+           new current object", true);
+        Ut.Message("-           delete current object", true);
+        Ut.Message("Home        reset current object", true);
+        Ut.Message("F1          print help", true);
+        Ut.Message("Esc         quit the program", true);
+        Ut.Message("Mouse.left  drag current object", true);
+        Ut.Message("Mouse.wheel rotate current object", true);
         break;
 
       case Key.Escape:
@@ -464,7 +464,7 @@ internal class Program
   {
     if (btn == MouseButton.Left)
     {
-      Util.Util.MessageInvariant($"Left button down: {mouse.Position}");
+      Ut.MessageInvariant($"Left button down: {mouse.Position}");
 
       // Start dragging.
       dragging = true;
@@ -482,7 +482,7 @@ internal class Program
   {
     if (btn == MouseButton.Left)
     {
-      Util.Util.MessageInvariant($"Left button up: {mouse.Position}");
+      Ut.MessageInvariant($"Left button up: {mouse.Position}");
 
       // Stop dragging.
       dragging = false;
@@ -498,7 +498,7 @@ internal class Program
   {
     if (mouse.IsButtonPressed(MouseButton.Left))
     {
-      Util.Util.MessageInvariant($"Mouse drag: {xy}");
+      Ut.MessageInvariant($"Mouse drag: {xy}");
     }
 
     // Object dragging.
@@ -530,7 +530,7 @@ internal class Program
   {
     if (btn == MouseButton.Left)
     {
-      Util.Util.Message("Closed by double-click.", true);
+      Ut.Message("Closed by double-click.", true);
       window?.Close();
     }
   }
@@ -543,7 +543,7 @@ internal class Program
   private static void MouseScroll(IMouse mouse, ScrollWheel wheel)
   {
     // wheel.Y is -1 or 1
-    Util.Util.MessageInvariant($"Mouse scroll: {wheel.Y}");
+    Ut.MessageInvariant($"Mouse scroll: {wheel.Y}");
 
     if (Objects.Count > 0)
     {
