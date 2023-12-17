@@ -4,33 +4,21 @@
 Marek Sádovský
 
 ## Command line arguments
--w --width, Required = true, Default = "", Width of the image
+-i --input, Required = true, input image
 
--h --height, Required = true, Default = "", Height of the image
+-h --huedelta, Required = true, value of chenge 
 
--s --symmetry, Required = false, Default = 6, Symmetry order - to how many parts will the circle parse
-
--f --figures, Required = false, Default = "all", Figures to draw (all, circles, triangles, diamonds, roundedSquares, ring)
- use initials (s for squares))and number as multiplier (s2 for squares with 2x multiplier) and f for fill
- (sf for filled squares or s2f for filled 2x multiplied)
-    
--c --colors, Required = false, Default = "all", Colors to use (red, green, blue, yellow, magenta, cyan, purple) use only initials (e.i. -c rymc) for red, yellow magenta cyan
-
--b --background, Required = false, Default = "gradient", Background color (red, green, blue, yellow, magenta, cyan, purple, black, white) or circular gradient format: 'from'x'to'
-
--o --output, Required = true, Default = "", Output file name
-
--l --overlap, Required = false, Default = 0f, Overlap between figures in percentage(0-100) 
+-o --output, Required = true, output file (image)
 
 ## Input data
-there are only arguments no other input data
+only input is image
 
 ## Algorithm
-using own implemented class MyDraw to draw objects defined by some points not using kartezian but somekind of rotational scheme.
-That helps when you need to create rotated copies. By default when no special arg is given the algorith creates mandala using all figures
+I render so called regions based on the colors. then there is list of colors which are offen used as skin colors. Then it choose regions
+Where is high probability to region being skin and ignore pixels in those regions. 
 
 ## Extra work / Bonuses
-There are many arguments to chenge behavior. Maybe gradient background
+There is algorithm which should find all sections which are skin and if not he still identify it as one part of image.
 
 ## Use of AI
-None sorry.
+Tried to use for getting some constants But never used them. 
