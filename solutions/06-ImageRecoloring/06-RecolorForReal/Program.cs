@@ -21,51 +21,41 @@ public class Options
 
 }
 
-struct Region
-{
+struct Region {
   public Dictionary<Vector2, Rgba32> pixels;
   public Rgba32 averageColor;
   private Dictionary<Rgba32,int> colorScheme;
-  //private Vector3 averageParams;
 
 
-  public Region (Dictionary<Vector2, Rgba32> pixels, Rgba32 averageColor)
-  {
+  public Region (Dictionary<Vector2, Rgba32> pixels, Rgba32 averageColor) {
     this.pixels = pixels;
     this.averageColor = averageColor;
     colorScheme = new Dictionary<Rgba32, int>();
-    foreach (var pixel in pixels)
-    {
+    foreach (var pixel in pixels) {
       colorScheme[pixel.Value] = colorScheme.GetValueOrDefault(pixel.Value, 0) + 1;
     }
   }
 
 
-  public void AddDictionary (Dictionary<Vector2, Rgba32> added)
-  {
-    foreach (var pixel in added)
-    {
+  public void AddDictionary (Dictionary<Vector2, Rgba32> added) {
+    foreach (var pixel in added) {
       this.pixels.Add(pixel.Key, pixel.Value);
       colorScheme[pixel.Value] = colorScheme.GetValueOrDefault(pixel.Value, 0) + 1;
     }
     RecalculateAverageColor();
   }
 
-  public void AddPixel (Vector2 coord, Rgba32 color)
-  {
+  public void AddPixel (Vector2 coord, Rgba32 color) {
     pixels.Add(coord, color);
     colorScheme[color] = colorScheme.GetValueOrDefault(color, 0) + 1;
-    if (pixels.Count % 200 == 0)
-      RecalculateAverageColor();  //to not to do it every time
+    if (pixels.Count % 200 == 0) RecalculateAverageColor();  //to not to do it every time
   }
 
-  private void RecalculateAverageColor ()
-  {
+  private void RecalculateAverageColor () {
     int r = 0;
     int g = 0;
     int b = 0;
-    foreach (var pixel in pixels)
-    {
+    foreach (var pixel in pixels) {
       r += pixel.Value.R;
       g += pixel.Value.G;
       b += pixel.Value.B;
@@ -75,10 +65,8 @@ struct Region
 
 }
 
-class ImageRecoloringWithFaceDetection
-{
-  static void Main (string[] args)
-  {
+class ImageRecoloringWithFaceDetection {
+  static void Main (string[] args) {
 
     Rgba32[] skinTones = new Rgba32[]
         {
@@ -111,21 +99,15 @@ class ImageRecoloringWithFaceDetection
             new Rgba32(255, 6, 0),
             new Rgba32(255, 0, 0)
         };
-    Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(o =>
-    {
-      using (Image<Rgba32> image = Image.Load<Rgba32>(o.Input))
-      {
+    Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(o => {
+      using (Image<Rgba32> image = Image.Load<Rgba32>(o.Input)) {
 
         var regions = CreateRegions(image);
         bool[,] isSkin = new bool[image.Width, image.Height];
-        foreach (var region in regions)
-        {
-          foreach (var tone in skinTones)
-          {
-            if (IsLessDistant(tone, region.averageColor, 0.12f))
-            {
-              foreach (var pixel in region.pixels)
-              {
+        foreach (var region in regions) {
+          foreach (var tone in skinTones) {
+            if (IsLessDistant(tone, region.averageColor, 0.12f)) {
+              foreach (var pixel in region.pixels) {
                 isSkin[(int)pixel.Key.X, (int)pixel.Key.Y] = true;
               }
               break;
@@ -133,59 +115,20 @@ class ImageRecoloringWithFaceDetection
           }
         }
 
-        /*foreach (var region in regions) {
-            foreach (var pixel in region.pixels)
-            {
-                image[(int)pixel.Key.X, (int)pixel.Key.Y] = region.averageColor;
-            }
-        }*/
         ProcessImage(image, o.Hue, isSkin);
-
 
         image.Save(o.Output);
       }
-
     });
-  }
-
-  static List<List<Vector2>> FindContours (Image<L8> gray)
-  {
-    List<List<Vector2>> contours = new List<List<Vector2>>();
-
-    // Implement contour detection from the edge-detected grayscale image
-    // This example assumes you have edge-detected data in 'gray'
-
-    // Placeholder code to demonstrate the concept
-    // Implement a proper contour detection algorithm based on your requirements
-
-    // Example: Create a single contour around the entire edge
-    List<Vector2> contour = new List<Vector2>();
-    for (int y = 0; y < gray.Height; y++)
-    {
-      for (int x = 0; x < gray.Width; x++)
-      {
-        if (gray[x, y].PackedValue > 0) // Assuming non-zero values represent edges
-        {
-          contour.Add(new Vector2(x, y));
-        }
-      }
-    }
-
-    contours.Add(contour); // Add the single contour (replace this with actual contours)
-
-    return contours;
   }
 
   static List<Region> CreateRegions (Image<Rgba32> image)
   {
     bool[,] visited = new bool[image.Width, image.Height];
     List<Region> regions = new List<Region>();
-    for (int y = 0; y < image.Height; y++)
-    {
-      for (int x = 0; x < image.Width; x++)
-      {
-        if (!visited[x, y])
-        {
+    for (int y = 0; y < image.Height; y++) {
+      for (int x = 0; x < image.Width; x++) {
+        if (!visited[x, y]) {
           // Create a new region and add seed pixel to the queue
           Region region = new Region(new Dictionary<Vector2, Rgba32>(), image[x, y]);
           var queue = new System.Collections.Generic.Queue<Vector2>();
@@ -193,20 +136,16 @@ class ImageRecoloringWithFaceDetection
           visited[x, y] = true;
           region.AddPixel(new Vector2(x, y), image[x, y]);
           // Process the queue
-          while (queue.Count > 0)
-          {
-
+          while (queue.Count > 0) {
             var current = queue.Dequeue();
             int cx = (int) current.X;
             int cy = (int) current.Y;
 
             foreach (var neighbor in
-                GetAdjacentPixels((int)current.X, (int)current.Y, image.Width, image.Height))
-            {
+                GetAdjacentPixels((int)current.X, (int)current.Y, image.Width, image.Height)) {
               int nx = (int) neighbor.X;
               int ny = (int) neighbor.Y;
-              if (!visited[nx, ny] && IsLessDistant(image[cx, cy], image[nx, ny], 0.05f))
-              {
+              if (!visited[nx, ny] && IsLessDistant(image[cx, cy], image[nx, ny], 0.05f)) {
                 queue.Enqueue(neighbor);
 
                 region.AddPixel(neighbor, image[nx, ny]);
@@ -217,21 +156,16 @@ class ImageRecoloringWithFaceDetection
 
           regions.Add(region);
         }
-
       }
     }
 
     return regions;
   }
 
-  static bool nextToSkin (int x, int y, bool[,] isSkin)
-  {
-    for (int i = x - 1; i <= x + 1; i++)
-    {
-      for (int j = y - 1; j <= y + 1; j++)
-      {
-        if (i >= 0 && i < isSkin.GetLength(0) && j >= 0 && j < isSkin.GetLength(1) && isSkin[i, j])
-        {
+  static bool nextToSkin (int x, int y, bool[,] isSkin) {
+    for (int i = x - 1; i <= x + 1; i++) {
+      for (int j = y - 1; j <= y + 1; j++) {
+        if (i >= 0 && i < isSkin.GetLength(0) && j >= 0 && j < isSkin.GetLength(1) && isSkin[i, j]) {
           return true;
         }
       }
@@ -239,8 +173,7 @@ class ImageRecoloringWithFaceDetection
     return false;
   }
 
-  static bool IsLessDistant (Rgba32 a, Rgba32 b, float dist)
-  {
+  static bool IsLessDistant (Rgba32 a, Rgba32 b, float dist) {
     var hsvA = ColorSpaceConverter.ToHsv(a);
     var hsvB = ColorSpaceConverter.ToHsv(b);
     var hueDist = Math.Min(Math.Abs(hsvA.H - hsvB.H), 360 - Math.Abs(hsvA.H - hsvB.H)) / 180;
@@ -249,40 +182,27 @@ class ImageRecoloringWithFaceDetection
     return hueDist * hueDist + satDist * satDist + valDist * valDist < dist * dist;
   }
 
-  static IEnumerable<Vector2> GetAdjacentPixels (int x, int y, int maxW, int maxH)
-  {
-    if (x > 0)
-    {
+  static IEnumerable<Vector2> GetAdjacentPixels (int x, int y, int maxW, int maxH) {
+    if (x > 0) {
       yield return new Vector2(x - 1, y);
     }
-
-    if (x < maxW - 1)
-    {
+    if (x < maxW - 1) {
       yield return new Vector2(x + 1, y);
     }
-
-    if (y > 0)
-    {
+    if (y > 0) {
       yield return new Vector2(x, y - 1);
     }
-
-    if (y < maxH - 1)
-    {
+    if (y < maxH - 1) {
       yield return new Vector2(x, y + 1);
     }
   }
 
 
-  static void ProcessImage (Image<Rgba32> image, float hueDelta, bool[,] isSkin)
-  {
-    for (int y = 0; y < image.Height; y++)
-    {
-      for (int x = 0; x < image.Width; x++)
-      {
-        if (!isSkin[x, y])
-        {
-          if (!nextToSkin(x, y, isSkin))
-          {
+  static void ProcessImage (Image<Rgba32> image, float hueDelta, bool[,] isSkin) {
+    for (int y = 0; y < image.Height; y++) {
+      for (int x = 0; x < image.Width; x++) {
+        if (!isSkin[x, y]) {
+          if (!nextToSkin(x, y, isSkin)) {
 
             var hsv = ColorSpaceConverter.ToHsv(image[x, y]);
             hsv = new Hsv((hsv.H + hueDelta) % 360, hsv.S, hsv.V);
@@ -293,19 +213,4 @@ class ImageRecoloringWithFaceDetection
       }
     }
   }
-  static PointF VectToPointF (Vector2 from)
-  {
-    return new PointF(from.X, from.Y);
-  }
-
-  static PointF[] VectToPointFs (Vector2[] from)
-  {
-    PointF[] to = new PointF[from.Length];
-    for (int i = 0; i < from.Length; i++)
-    {
-      to[i] = VectToPointF(from[i]);
-    }
-    return to;
-  }
 }
-
