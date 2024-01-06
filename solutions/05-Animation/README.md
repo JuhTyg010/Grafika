@@ -1,4 +1,4 @@
-# Documentation of the task "04-Mandala"
+# Documentation of the task "05-Animation"
 
 ## Author
 Marek Sádovský
@@ -8,29 +8,22 @@ Marek Sádovský
 
 -h --height, Required = true, Default = "", Height of the image
 
--s --symmetry, Required = false, Default = 6, Symmetry order - to how many parts will the circle parse
+-p --fps, Required = false, Default = 30.0f, Frames per second
 
--f --figures, Required = false, Default = "all", Figures to draw (all, circles, triangles, diamonds, roundedSquares, ring)
- use initials (s for squares))and number as multiplier (s2 for squares with 2x multiplier) and f for fill
- (sf for filled squares or s2f for filled 2x multiplied)
-    
--c --colors, Required = false, Default = "all", Colors to use (red, green, blue, yellow, magenta, cyan, purple) use only initials (e.i. -c rymc) for red, yellow magenta cyan
+-f --frames, Required = false, Default = 60, Number of output frames
 
--b --background, Required = false, Default = "gradient", Background color (red, green, blue, yellow, magenta, cyan, purple, black, white) or circular gradient format: 'from'x'to'
+-o --output, Required = false, Default = "anim/out{0:0000}.png", Output file-name mask
 
--o --output, Required = true, Default = "", Output file name
-
--l --overlap, Required = false, Default = 0f, Overlap between figures in percentage(0-100) 
 
 ## Input data
 there are only arguments no other input data
 
 ## Algorithm
-using own implemented class MyDraw to draw objects defined by some points not using kartezian but somekind of rotational scheme.
-That helps when you need to create rotated copies. By default when no special arg is given the algorith creates mandala using all figures
+using own implemented class DrawMandala to draw mandala (more 04-Mandala) generates background onse and than only changes mandala image.
+The algorithm uses randomized parameters for diversity. Should support Windows and Linux for generating avi video from images.
 
 ## Extra work / Bonuses
-There are many arguments to chenge behavior. Maybe gradient background
+link to some animations: https://drive.google.com/drive/folders/11_-nik-fe1o_MW118WBIEjk-oujVR0Ka?usp=drive_link    download for better quality. 
 
 ## Use of AI
 None sorry.
