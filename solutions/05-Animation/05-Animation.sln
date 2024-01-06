@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "05-Animation", "05-Animation\05-Animation.csproj", "{A0399FE7-9036-4165-9668-95EC25607DAC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A0399FE7-9036-4165-9668-95EC25607DAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0399FE7-9036-4165-9668-95EC25607DAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0399FE7-9036-4165-9668-95EC25607DAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0399FE7-9036-4165-9668-95EC25607DAC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

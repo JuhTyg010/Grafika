@@ -94,9 +94,15 @@ class Program
 
                 // Draw the background
                 if (o.Background == "gradient") {
+
+
+
                     List<Rgba32> cols = new List<Rgba32> {Red, Green, Blue, Yellow, Magenta, Cyan, Purple, White, Black};
                     DrawBackground(image, cols[rand.Next(cols.Count)], cols[rand.Next(cols.Count)]);
                 }
+
+
+
                 else
                 if (o.Background.Contains("x")) {
                     DrawBackground(image, GetColor(o.Background.Split('x')[0]), GetColor(o.Background.Split('x')[1]));
