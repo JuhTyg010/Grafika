@@ -61,9 +61,9 @@ internal class Program
       End = end;
     }
   }
-  
-  
-  
+
+
+
 
   static void Main (string[] args)
   {
@@ -71,10 +71,10 @@ internal class Program
        .WithParsed<Options>(o =>
        {
          int frames = Math.Max(10, o.Frames);  // at least 10 frames
-         
+
          //PointF center = new(0.5f * o.Width, 0.5f * o.Height);
          //float radius = Math.Min(center.X, center.Y) * 0.9f;
-         
+
          Random rand = new Random();
          Vector2 center = new Vector2((float)o.Width / 2, (float)o.Height / 2);
          float maxRadius = (float)Math.Min(o.Width, o.Height) / 2;
@@ -84,7 +84,7 @@ internal class Program
          List<Rgba32> cols = new List<Rgba32> {Red, Green, Blue, Yellow, Magenta, Cyan, Purple, White, Black};
          (Rgba32, Rgba32) backgroudColors = (cols[rand.Next(cols.Count)], cols[rand.Next(cols.Count)]);
          #endregion
-         
+
          List<Rgba32> colors = new List<Rgba32>();
          List<Rgba32> colorsList = new List<Rgba32> {Red, Green, Blue, Yellow, Magenta, Cyan, Purple};
          int lenght = colorsList.Count;
@@ -93,7 +93,7 @@ internal class Program
            colors.Add(colorsList[index]);
            colorsList.Remove(colorsList[index]);
          }
-         
+
          List<Figure> figures = new List<Figure>();
          List<Figures> types = new List<Figures> {Figures.Circles, Figures.Triangles, Figures.Diamonds, Figures.RoundedSquares, Figures.Ring};
          //using int from previous for-cycle cause no need for it
@@ -109,7 +109,7 @@ internal class Program
          float speed = maxRadius / (o.Fps);
          CalculateRadius radius = new CalculateRadius(maxRadius, figures.Count);
          for (int i = 0; i < figures.Count; i++) {
-           
+
            Tuple<float, float> r = radius.Next();
            Figure f = figures[i];
            f.SetRadius(r.Item1, r.Item2);
@@ -138,9 +138,8 @@ internal class Program
          }
 
          int frameHalf = (frames >> 1) - 1 ;
-         int frameQuarter = (frames >> 2) - 1;
-         
-         
+
+
          // Generate the frames
          for (int frame = 0; frame < (frames >> 1); frame++ )
          {
@@ -179,10 +178,9 @@ internal class Program
              image.Save(fileName2);
 
              Console.WriteLine($"Frames '{fileName}' and '{fileName2}' created successfully.");
-             
-             
-             Out((frame > frameQuarter ? EasyInOutCubic((float)(frameHalf-frame)/frameQuarter) :
-               EasyInOutCubic((float)frame / frameQuarter)) * speed, figures, maxRadius);
+
+
+             Out(CustomFunction((float)frame / frameHalf) * speed, figures, maxRadius);
            }
          }
          if (frames % 2 == 1)
@@ -235,7 +233,7 @@ internal class Program
            a.StartInfo.Arguments = "-framerate " + o.Fps + " -i " + fileMaskStr(o.FileMask) + " -f avi  -vcodec  png -y " + fileFromMask(o.FileMask, ".avi");
            a.Start();
            a.WaitForExit();
-           
+
            Console.WriteLine("Video created successfully. Saved as " + fileFromMask(o.FileMask, ".avi"));
          }
          else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
@@ -252,7 +250,7 @@ internal class Program
   static string fileFromMask(string mask, string format)
   {
     string result = "";
-    
+
     for(int i = 0; i < mask.Length; i++) {
       if(mask[i] == '{') {
         break;
@@ -261,13 +259,13 @@ internal class Program
     }
     return result + format;
   }
-  
+
   static string fileMaskStr(string mask) {
     // TODO get mask e.g. out{0:0000}.png -> out%04d.png to return
     // anim/out{0:00000}.png -> anim/out%05d.png
-    
+
     string result = "";
-    
+
     for(int i = 0; i < mask.Length; i++) {
       if(mask[i] == '{') {
         result += "%";
@@ -293,7 +291,7 @@ internal class Program
     f.SetRadius(a,b);
     return f;
   }
-  
+
 
   static List<Figure> Out(float speed, List<Figure> input, float maxRadius)
   {
@@ -313,14 +311,25 @@ internal class Program
     }
     return figures;
   }
-  
-//function easeInOutCubic(x: number): number {
-// return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-// }
+
+
+// is good but only in range 0-1 than it goes wild
+  static float CustomFunction(float x)
+  {
+    x -= 0.5f;
+    float xx = x * x;
+    return 2 * ((8 * xx - 4) * xx + 0.5f);
+  }
+
   static float EasyInOutCubic(float x) {
     return x < 0.5f ? 4 * x * x * x : 1 - (float)Math.Pow(-2 * x + 2, 3) / 2;
   }
+  static float DerivativeEasyInOutCubic(float x) {
+    return x < 0.5f ? 12 * x * x : 3 * (float)Math.Pow(-2 * x + 2, 2) / 2;
+  }
 }
+
+
 
 class CalculateRadius
 {
