@@ -31,6 +31,7 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Silk.NET" Version="2.19.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
+    <PackageReference Include="Util.Core" Version="6.0.16" />
   </ItemGroup>
 
 </Project>
