@@ -151,11 +151,6 @@ class RocketParticle : Particle
     this.Friction = friction;
   }
 
-  /// <summary>
-  /// Simulate one step in time.
-  /// </summary>
-  /// <param name="time">Target time to simulate to (in seconds).</param>
-  /// <returns></returns>
   public override bool SimulateTo (double time)
   {
     if (time <= SimulatedTime)
@@ -335,6 +330,18 @@ public class Simulation
     {
       if (!particles[i].SimulateTo(time))
         toRemove.Add(i);
+      else if (particles[i] is RocketParticle)
+      {
+        //TODO animate trajectory
+        double theta = rnd.NextDouble() * 2 * Math.PI;
+        double phi = rnd.NextDouble() * Math.PI / 8;
+        Vector3 blur = new Vector3((float)(Math.Sin(phi) * Math.Cos(theta)), (float)Math.Cos(phi), (float)(Math.Sin(phi) * Math.Sin(theta)));
+        blur /= 2;
+        Particle p = new FlameParticle(time, particles[i].Position, particles[i].Color, particles[i].Size/2,
+          particles[i].Velocity - blur, rnd.NextDouble(), particles[i].Weight*2, AirFriction);
+        p.timeScale = TimeScale;
+        particles.Add(p);
+      }
     }
     SimulatedTime = time;
     for(int i = toRemove.Count - 1; i >= 0; i--)
