@@ -5,7 +5,6 @@ using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using Silk.NET.Maths;
-using System.Numerics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -43,7 +42,7 @@ abstract class Particle
   public Vector3 Position { get; protected set;}
   public Vector3 Color { get; protected set;}
   public float Size { get; protected set;}
-
+  public float timeScale;
   public Vector3 Velocity { get; protected set;}
   public double GravityConst = 9.81;
 
@@ -82,6 +81,7 @@ class FlameParticle : Particle
       return true;
 
     double dt = time - SimulatedTime;
+    dt *= timeScale;
     SimulatedTime = time;
     //dont care about the age the velocity chenges over time and the color and size when is smaller than constant remove,
     //also if the magnitude of the velocity is smaller than 0.5 and also if size is smaller than 0.1
@@ -135,7 +135,6 @@ class FlameParticle : Particle
 
 class RocketParticle : Particle
 {
-  private static Random rnd = new((int)DateTime.Now.Ticks);
 
   /// <summary>
   /// Create a new particle.
@@ -163,6 +162,7 @@ class RocketParticle : Particle
       return true;
 
     double dt = time - SimulatedTime;
+    dt *= timeScale;
     SimulatedTime = time;
 
     Age -= dt;
@@ -206,7 +206,6 @@ class RocketParticle : Particle
 
 class Launcher : Particle
 {
-  private static Random rnd = new((int)DateTime.Now.Ticks);
   private double delta;
 
   public Launcher(double now, Vector3 position, Vector3 color, float size, Vector3 velocity, double age)
@@ -226,6 +225,7 @@ class Launcher : Particle
       return true;
 
     double dt = time - SimulatedTime;
+    dt *= timeScale;
     SimulatedTime = time;
 
     Age -= dt;
@@ -270,16 +270,19 @@ public class Simulation
 
   private double AirFriction = .5;
   public int Particles => particles.Count;
+
+  public float TimeScale { get; private set; }
   public int MaxParticles { get; private set; }
 
   private double SimulatedTime;
   public double ParticleRate { get; set; }
 
-  public Simulation (double now, double particleRate, int maxParticles, int initParticles)
+  public Simulation (double now, double particleRate, int maxParticles, int initParticles, float timeScale = 1.0f)
   {
     SimulatedTime = now;
     ParticleRate = particleRate;
     MaxParticles = maxParticles;
+    TimeScale = timeScale;
     GenerateLauncher(initParticles);
   }
 
@@ -287,9 +290,9 @@ public class Simulation
   private void GenerateExplode(int number, Vector3 position, Vector3 color, float size, double velocity, double age)
   {
     Random rnd = new();
-    Vector3 direction = new Vector3(0, 1, 0);
-    float theta = (float)(rnd.NextDouble() * 2 * Math.PI);
-    float phi = (float)(Math.Acos(2 * rnd.Next(0,1) - 1));
+    Vector3 direction;
+    float theta;
+    float phi;
     if (number <= 0)
       return;
 
@@ -298,11 +301,12 @@ public class Simulation
       theta = (float)(rnd.NextDouble() * 2 * Math.PI);
       phi = (float)(rnd.NextDouble() * Math.PI);
       direction = new Vector3((float)(Math.Sin(phi) * Math.Cos(theta)), (float)Math.Cos(phi), (float)(Math.Sin(phi) * Math.Sin(theta)));
-      particles.Add(new FlameParticle(SimulatedTime, position, color, size,
-        direction * (float)velocity, age, .05, AirFriction));
+      Particle p = new FlameParticle(SimulatedTime, position, color, size,
+        direction * (float)velocity, age, .05, AirFriction);
+      p.timeScale = TimeScale;
+      particles.Add(p);
     }
   }
-
   private void GenerateLauncher(int number)
   {
     Random rnd = new();
@@ -313,8 +317,10 @@ public class Simulation
     {
       Console.WriteLine("Generating");
       // Generate one new particle.
-      particles.Add(new Launcher(SimulatedTime, new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()),
-        new Vector3(1, 0, 0), 10, new Vector3(0, 0, 0), rnd.Next(1, 5)));
+      Particle p = new Launcher(SimulatedTime, new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()),
+        new Vector3(1, 0, 0), 10, new Vector3(0, 0, 0), rnd.Next(1, 5));
+      p.timeScale = TimeScale;
+      particles.Add(p);
     }
   }
 
@@ -340,8 +346,10 @@ public class Simulation
         Vector3 velocity = new Vector3(0 + (float)(Math.Min(rnd.NextDouble(), 0.5) * rnd.Next(-1, 1)),
           1 + (float)rnd.NextDouble(),
           0 + (float)(Math.Min(rnd.NextDouble(), 0.5) * rnd.Next(-1, 1)));
-        particles.Add(new RocketParticle(time, particles[toRemove[i]].Position, new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()),
-          particles[toRemove[i]].Size/2, velocity, 1, .1, AirFriction));
+        Particle p = new RocketParticle(time, particles[toRemove[i]].Position, new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()),
+          particles[toRemove[i]].Size/2, velocity, 1, .1, AirFriction);
+        p.timeScale = TimeScale;
+        particles.Add(p);
       }
       else if(particles[toRemove[i]] is RocketParticle)
       {
@@ -359,11 +367,6 @@ public class Simulation
     //int toGenerate = Math.Min(MaxParticles - particles.Count, (int)(dt * ParticleRate));
   }
 
-  /// <summary>
-  /// [Re]fills the vertex buffer with current data.
-  /// </summary>
-  /// <param name="buffer">Vertex buffer array.</param>
-  /// <returns>Number of particles to update and render.</returns>
   public int FillBuffer (float[] buffer)
   {
     int i = 0;
@@ -373,12 +376,17 @@ public class Simulation
     return particles.Count;
   }
 
-  /// <summary>
-  /// Removes all the particles.
-  /// </summary>
   public void Reset()
   {
     particles.Clear();
+    GenerateLauncher(5);
+  }
+
+  public void ChangeTimeScale(float timeScale)
+  {
+    foreach (var p in particles)
+      p.timeScale = timeScale;
+    TimeScale = timeScale;
   }
 }
 
@@ -418,9 +426,9 @@ internal class Program
   /// <summary>
   /// Current number of vertices to draw.
   /// </summary>
-  private static int vertices = 0;
+  private static int vertices;
 
-  public static int maxParticles = 0;
+  public static int maxParticles;
   public static double particleRate = 1000.0;
 
   private static BufferObject<float>? Vbo;
@@ -627,7 +635,7 @@ internal class Program
       nowSeconds = FPS.NowInSeconds;
       if (sim != null)
       {
-        sim.SimulateTo(nowSeconds * timeMultiplier);
+        sim.SimulateTo(nowSeconds);
         vertices = sim.FillBuffer(vertexBuffer);
       }
 
@@ -734,9 +742,11 @@ internal class Program
         break;
       case Key.KeypadAdd:
         timeMultiplier *= 2;
+        sim.ChangeTimeScale((float)timeMultiplier);
         break;
       case Key.KeypadSubtract:
         timeMultiplier /= 2;
+        sim.ChangeTimeScale((float)timeMultiplier);
         break;
       case Key.T:
         // Toggle texture.
