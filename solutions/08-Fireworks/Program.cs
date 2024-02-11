@@ -390,11 +390,11 @@ internal class Program
         ctrlDown++;
         break;
       case Key.KeypadAdd:
-        timeMultiplier *= 2;
+        timeMultiplier += .2f;
         sim.ChangeTimeScale((float)timeMultiplier);
         break;
       case Key.KeypadSubtract:
-        timeMultiplier /= 2;
+        timeMultiplier -= .2f;
         sim.ChangeTimeScale((float)timeMultiplier);
         break;
       case Key.T:

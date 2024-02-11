@@ -44,8 +44,8 @@ public class Simulation
       theta = (float)(rnd.NextDouble() * 2 * Math.PI);
       phi = (float)(rnd.NextDouble() * Math.PI);
       transform.Rotation = new Vector2(theta, phi);
-      transform.Scale = scale;
-      transform.Weight = .01f;
+      //transform.Scale = scale;
+      transform.Weight = .05f;
       Particle p = new FlameParticle(SimulatedTime, transform.copy(), color,  velocity, age);
       p.timeScale = TimeScale;
       particles.Add(p);
@@ -61,7 +61,7 @@ public class Simulation
     {
       // Generate one new particle.
       Transform transform = new (new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()), new Vector2(1, 0), 10, 0);
-      Particle p = new Launcher(SimulatedTime, transform, new Vector3(1, 0, 0), new Vector3(0, 0, 0), 3);
+      Particle p = new Launcher(SimulatedTime, transform, new Vector3(1, 0, 0), new Vector3(0, 0, 0), rnd.Next(1,5));
       p.timeScale = TimeScale;
       particles.Add(p);
     }
@@ -83,7 +83,6 @@ public class Simulation
       {
         particles[i].AddForce(new Vector3(0, .16f, 0) * TimeScale);
         toAdd.Add(particles[i]);
-        Console.WriteLine(particles[i].Velocity);
       }
     }
     SimulatedTime = time;
@@ -106,7 +105,7 @@ public class Simulation
       else if(particles[toRemove[i]] is RocketParticle)
       {
         Particle p = particles[toRemove[i]];
-        GenerateExplode(400, p.transform, p.Color, new Vector3(1,1,1), 10);
+        GenerateExplode(400, p.transform, p.Color, new Vector3(1,1,1) * (float)Math.Max(0.5, rnd.NextDouble()), 10);
         particles.RemoveAt(toRemove[i]);
       }
       else
