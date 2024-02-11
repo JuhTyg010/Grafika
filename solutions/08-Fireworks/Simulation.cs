@@ -30,7 +30,7 @@ public class Simulation
   }
 
 
-  private void GenerateExplode(int number,Transform transform, Vector3 color, float velocity, double age)
+  private void GenerateExplode(int number,Transform transform, Vector3 color, Vector3 velocity, double age)
   {
     float scale = transform.Scale/2;
     Random rnd = new();
@@ -45,8 +45,8 @@ public class Simulation
       phi = (float)(rnd.NextDouble() * Math.PI);
       transform.Rotation = new Vector2(theta, phi);
       transform.Scale = scale;
-      transform.Weight = .0001f;
-      Particle p = new FlameParticle(SimulatedTime, transform.copy(), color, new Vector3(1, 1,1) * velocity, age);
+      transform.Weight = .01f;
+      Particle p = new FlameParticle(SimulatedTime, transform.copy(), color,  velocity, age);
       p.timeScale = TimeScale;
       particles.Add(p);
     }
@@ -74,6 +74,7 @@ public class Simulation
       return;
 
     List<int> toRemove = new();
+    List<Particle> toAdd = new();
     for(int i = 0; i < particles.Count; i++)
     {
       if (!particles[i].SimulateTo(time, Gravity, AirFriction))
@@ -81,6 +82,7 @@ public class Simulation
       else if (particles[i] is RocketParticle)
       {
         particles[i].AddForce(new Vector3(0, .16f, 0) * TimeScale);
+        toAdd.Add(particles[i]);
         Console.WriteLine(particles[i].Velocity);
       }
     }
@@ -94,7 +96,7 @@ public class Simulation
         double phi = rnd.NextDouble() * Math.PI / 8;
         Transform transform = particles[toRemove[i]].transform.copy();
         transform.Weight = 1f;
-        transform.Scale = 10;
+        transform.Scale = 4;
         transform.Rotation = new Vector2((float)theta, (float)phi);
         Particle p = new RocketParticle(time, transform,
           new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()), velocity, 1.5);
@@ -104,7 +106,7 @@ public class Simulation
       else if(particles[toRemove[i]] is RocketParticle)
       {
         Particle p = particles[toRemove[i]];
-        GenerateExplode(400, p.transform, p.Color, 1, 10);
+        GenerateExplode(400, p.transform, p.Color, new Vector3(1,1,1), 10);
         particles.RemoveAt(toRemove[i]);
       }
       else
@@ -113,6 +115,11 @@ public class Simulation
       }
     }
     // 3. Generate new ones if there is space.
+    foreach (var particle in toAdd)
+    {
+      GenerateExplode(1, particle.transform.copy(), particle.Color, new Vector3(1,1,1)*.2f, .1);
+    }
+
     //int toGenerate = Math.Min(MaxParticles - particles.Count, (int)(dt * ParticleRate));
   }
 
