@@ -4,12 +4,14 @@ using Silk.NET.Maths;
 namespace _08_Fireworks;
 
 using Vector3 = Vector3D<float>;
+using Vector2 = Vector2D<float>;
 
 public class Simulation
 {
   private List<Particle> particles = new();
 
-  private double AirFriction = .5;
+  private readonly double AirFriction = .5;
+  private readonly double Gravity = 9.81;
   public int Particles => particles.Count;
 
   public float TimeScale { get; private set; }
@@ -28,10 +30,10 @@ public class Simulation
   }
 
 
-  private void GenerateExplode(int number, Vector3 position, Vector3 color, float size, double velocity, double age)
+  private void GenerateExplode(int number,Transform transform, Vector3 color, float velocity, double age)
   {
+    float scale = transform.Scale/2;
     Random rnd = new();
-    Vector3 direction;
     float theta;
     float phi;
     if (number <= 0)
@@ -41,9 +43,10 @@ public class Simulation
     {
       theta = (float)(rnd.NextDouble() * 2 * Math.PI);
       phi = (float)(rnd.NextDouble() * Math.PI);
-      direction = new Vector3((float)(Math.Sin(phi) * Math.Cos(theta)), (float)Math.Cos(phi), (float)(Math.Sin(phi) * Math.Sin(theta)));
-      Particle p = new FlameParticle(SimulatedTime, position, color, size,
-        direction * (float)velocity, age, .05, AirFriction);
+      transform.Rotation = new Vector2(theta, phi);
+      transform.Scale = scale;
+      transform.Weight = .0001f;
+      Particle p = new FlameParticle(SimulatedTime, transform.copy(), color, new Vector3(1, 1,1) * velocity, age);
       p.timeScale = TimeScale;
       particles.Add(p);
     }
@@ -56,10 +59,9 @@ public class Simulation
 
     while (number-- > 0)
     {
-      Console.WriteLine("Generating");
       // Generate one new particle.
-      Particle p = new Launcher(SimulatedTime, new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()),
-        new Vector3(1, 0, 0), 10, new Vector3(0, 0, 0), rnd.Next(1, 5));
+      Transform transform = new (new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()), new Vector2(1, 0), 10, 0);
+      Particle p = new Launcher(SimulatedTime, transform, new Vector3(1, 0, 0), new Vector3(0, 0, 0), 3);
       p.timeScale = TimeScale;
       particles.Add(p);
     }
@@ -74,19 +76,12 @@ public class Simulation
     List<int> toRemove = new();
     for(int i = 0; i < particles.Count; i++)
     {
-      if (!particles[i].SimulateTo(time))
+      if (!particles[i].SimulateTo(time, Gravity, AirFriction))
         toRemove.Add(i);
       else if (particles[i] is RocketParticle)
       {
-        //TODO animate trajectory
-        double theta = rnd.NextDouble() * 2 * Math.PI;
-        double phi = rnd.NextDouble() * Math.PI / 8;
-        Vector3 blur = new Vector3((float)(Math.Sin(phi) * Math.Cos(theta)), (float)Math.Cos(phi), (float)(Math.Sin(phi) * Math.Sin(theta)));
-        blur /= 2;
-        Particle p = new FlameParticle(time, particles[i].Position, particles[i].Color, particles[i].Size/2,
-          particles[i].Velocity - blur, rnd.NextDouble(), particles[i].Weight*2, AirFriction);
-        p.timeScale = TimeScale;
-        particles.Add(p);
+        particles[i].AddForce(new Vector3(0, .16f, 0) * TimeScale);
+        Console.WriteLine(particles[i].Velocity);
       }
     }
     SimulatedTime = time;
@@ -94,21 +89,22 @@ public class Simulation
     {
       if(particles[toRemove[i]] is Launcher)
       {
-        Console.WriteLine("Shoot");
-        //TODO: velocity should be something pointed up but in range angle
-        Vector3 velocity = new Vector3(0 + (float)(Math.Min(rnd.NextDouble(), 0.5) * rnd.Next(-1, 1)),
-          1 + (float)rnd.NextDouble(),
-          0 + (float)(Math.Min(rnd.NextDouble(), 0.5) * rnd.Next(-1, 1)));
-        Particle p = new RocketParticle(time, particles[toRemove[i]].Position, new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()),
-          particles[toRemove[i]].Size/2, velocity, 1, .1, AirFriction);
+        Vector3 velocity = new Vector3(1, 1, 1) * 1.7f;
+        double theta = rnd.NextDouble() * 2 * Math.PI;
+        double phi = rnd.NextDouble() * Math.PI / 8;
+        Transform transform = particles[toRemove[i]].transform.copy();
+        transform.Weight = 1f;
+        transform.Scale = 10;
+        transform.Rotation = new Vector2((float)theta, (float)phi);
+        Particle p = new RocketParticle(time, transform,
+          new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()), velocity, 1.5);
         p.timeScale = TimeScale;
         particles.Add(p);
       }
       else if(particles[toRemove[i]] is RocketParticle)
       {
-        Console.WriteLine("Explode");
         Particle p = particles[toRemove[i]];
-        GenerateExplode(400, p.Position, p.Color, p.Size, Math.Max(0.5, rnd.NextDouble()), 10);
+        GenerateExplode(400, p.transform, p.Color, 1, 10);
         particles.RemoveAt(toRemove[i]);
       }
       else

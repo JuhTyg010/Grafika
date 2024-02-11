@@ -7,47 +7,73 @@ using System.Globalization;
 
 namespace _08_Fireworks;
 using Vector3 = Vector3D<float>;
-
+using Vector2 = Vector2D<float>;
 
 abstract class Particle
 {
-  public Vector3 Position { get; protected set;}
+  public Transform transform { get; set; }
   public Vector3 Color { get; protected set;}
-  public float Size { get; protected set;}
+
   public float timeScale;
   public Vector3 Velocity { get; protected set;}
-  public double GravityConst = 9.81;
 
-  public double Weight { get; protected set; }
-  public double Friction { get; protected set; }
-  public double Age { get; set; }
+  public double TimeToLive { get; set; }
   public  double SimulatedTime { get; protected set; }
-  abstract public bool SimulateTo(double time);
+  abstract public bool SimulateTo(double time, double gravity, double friction);
   abstract public void FillBuffer(float[] buffer, ref int i);
 
   protected double Magnitude(Vector3 v) {
     return Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
   }
 
+  protected Vector3 Normalize (Vector3 v)
+  {
+    return v / (float) Magnitude(v);
+  }
+
+  protected Vector3 ApplyGravity (double gravity, double dt) {
+    return new Vector3(0, (float)-(gravity * transform.Weight * dt), 0);
+  }
+
+  protected Vector3 ApplyFriction (double friction, Vector3 velocity, double dt)
+  {
+    return -Normalize(velocity) * (float)(friction * dt);
+  }
+
+  protected Vector3 CalculateVelocity (double dt, double gravity, double friction)
+  {
+
+    Velocity += ApplyGravity(gravity, dt);
+    Velocity += ApplyFriction(friction, Velocity, dt);
+    return Velocity * (float)dt;
+  }
+  protected Vector3 Rebase(Vector3 v, Vector2 rotation)
+  {
+    return new Vector3(
+      v.X * MathF.Cos(rotation.X) * MathF.Sin(rotation.Y),
+      v.Y * MathF.Cos(rotation.Y),
+      v.Z * MathF.Sin(rotation.X) * MathF.Sin(rotation.Y)
+    );
+  }
+
+  public void AddForce(Vector3 force)
+  {
+    Velocity += Rebase(force, transform.Rotation);
+  }
 }
 
 class FlameParticle : Particle
 {
-  private double decay;
-  public FlameParticle(double now, Vector3 position, Vector3 color, float size, Vector3 velocity, double age, double weight = 1.0, double friction = 0.0)
+  public FlameParticle(double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive)
   {
-    Position = position;
+    this.transform = transform;
     Color = color;
-    Size = size;
-    Velocity = velocity;
-    Age = age;
+    Velocity = Rebase(velocity, transform.Rotation);
+    TimeToLive = timeToLive;
     SimulatedTime = now;
-    this.Weight = weight;
-    this.Friction = friction;
-    decay = 0;
   }
 
-  public override bool SimulateTo (double time)
+  public override bool SimulateTo (double time, double gravity, double friction)
   {
     if (time <= SimulatedTime)
       return true;
@@ -57,34 +83,26 @@ class FlameParticle : Particle
     SimulatedTime = time;
     //dont care about the age the velocity chenges over time and the color and size when is smaller than constant remove,
     //also if the magnitude of the velocity is smaller than 0.5 and also if size is smaller than 0.1
-    Age -= dt;
-    if (Age <= 0.0) return false;
-    if ( Size < .2 || Magnitude(Color) < 0.1) return false;
+    TimeToLive -= dt;
+    if (TimeToLive <= 0.0) return false;
+    if ( transform.Scale < .5 || Magnitude(Color) < 0.2) return false;
 
-
-
-    Vector3 gravitation = new Vector3(0, (float)-(GravityConst * dt * Weight), 0);
-    Vector3 friction = -Velocity / (float)(Math.Sqrt(Velocity.X * Velocity.X + Velocity.Y * Velocity.Y + Velocity.Z * Velocity.Z)) * (float)(Friction * dt);
-    Velocity += gravitation;
-    Velocity += friction;
-    Position += Velocity * (float)dt;
+    transform.Position += CalculateVelocity(dt, gravity, friction);
 
     // Change particle color.
     //TODO chenge color and size based on speed
 
     Color *= (float)Math.Pow(0.5, dt);
-    decay += dt/4;
-    Size -= (float)decay;
-
+    transform.Scale *= (float)Math.Pow(0.5, dt);
     return true;
   }
 
   public override void FillBuffer (float[] buffer, ref int i)
   {
     // offset  0: Position
-    buffer[i++] = Position.X;
-    buffer[i++] = Position.Y;
-    buffer[i++] = Position.Z;
+    buffer[i++] = transform.Position.X;
+    buffer[i++] = transform.Position.Y;
+    buffer[i++] = transform.Position.Z;
 
     // offset  3: Color
     buffer[i++] = Color.X;
@@ -101,7 +119,7 @@ class FlameParticle : Particle
     buffer[i++] = 0.5f;
 
     // offset 11: Point size
-    buffer[i++] = Size;
+    buffer[i++] = transform.Scale;
   }
 }
 
@@ -111,19 +129,16 @@ class RocketParticle : Particle
   /// <summary>
   /// Create a new particle.
   /// </summary>
-  public RocketParticle (double now, Vector3 position, Vector3 color, float size, Vector3 velocity, double age, double weight = 1.0, double friction = 0.0)
+  public RocketParticle (double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive)
   {
-    Position = position;
     Color = color;
-    Size = size;
-    Velocity = velocity;
-    Age = age;
+    this.transform = transform;
+    Velocity = Rebase(velocity, transform.Rotation);
+    TimeToLive = timeToLive;
     SimulatedTime = now;
-    this.Weight = weight;
-    this.Friction = friction;
   }
 
-  public override bool SimulateTo (double time)
+  public override bool SimulateTo (double time, double gravity, double friction)
   {
     if (time <= SimulatedTime)
       return true;
@@ -132,25 +147,19 @@ class RocketParticle : Particle
     dt *= timeScale;
     SimulatedTime = time;
 
-    Age -= dt;
-    if (Age <= 0.0)
+    TimeToLive -= dt;
+    if (TimeToLive <= 0.0)
       return false;
 
-    Vector3 gravitation = new Vector3(0, (float)-(GravityConst * dt * Weight), 0);
-    Vector3 friction = -Velocity / (float)(Math.Sqrt(Velocity.X * Velocity.X + Velocity.Y * Velocity.Y + Velocity.Z * Velocity.Z)) * (float)(Friction * dt);
-    Velocity += gravitation;
-    Velocity += friction;
-
-    Position += Velocity * (float)dt;
-
+    transform.Position += CalculateVelocity(dt, gravity, friction);
     return true;
   }
   public override void FillBuffer (float[] buffer, ref int i)
   {
     // offset  0: Position
-    buffer[i++] = Position.X;
-    buffer[i++] = Position.Y;
-    buffer[i++] = Position.Z;
+    buffer[i++] = transform.Position.X;
+    buffer[i++] = transform.Position.Y;
+    buffer[i++] = transform.Position.Z;
 
     // offset  3: Color
     buffer[i++] = Color.X;
@@ -167,7 +176,7 @@ class RocketParticle : Particle
     buffer[i++] = 0.5f;
 
     // offset 11: Point size
-    buffer[i++] = Size;
+    buffer[i++] = transform.Scale;
   }
 }
 
@@ -175,18 +184,17 @@ class Launcher : Particle
 {
   private double delta;
 
-  public Launcher(double now, Vector3 position, Vector3 color, float size, Vector3 velocity, double age)
+  public Launcher(double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive)
   {
-    Position = position;
+    this.transform = transform;
     Color = color;
-    Size = size;
     Velocity = velocity;
-    Age = age;
+    TimeToLive = timeToLive;
     SimulatedTime = now;
-    delta = age;
+    delta = timeToLive;
   }
 
-  public override bool SimulateTo (double time)
+  public override bool SimulateTo (double time, double gravity, double friction)
   {
     if (time <= SimulatedTime)
       return true;
@@ -195,10 +203,10 @@ class Launcher : Particle
     dt *= timeScale;
     SimulatedTime = time;
 
-    Age -= dt;
-    if (Age <= 0.0)
+    TimeToLive -= dt;
+    if (TimeToLive <= 0.0)
     {
-      Age = delta;
+      TimeToLive = delta;
       return false;
     }
 
@@ -208,9 +216,9 @@ class Launcher : Particle
   public override void FillBuffer (float[] buffer, ref int i)
   {
     // offset  0: Position
-    buffer[i++] = Position.X;
-    buffer[i++] = Position.Y;
-    buffer[i++] = Position.Z;
+    buffer[i++] = transform.Position.X;
+    buffer[i++] = transform.Position.Y;
+    buffer[i++] = transform.Position.Z;
 
     // offset  3: Color
     buffer[i++] = Color.X;
@@ -227,6 +235,6 @@ class Launcher : Particle
     buffer[i++] = 0.5f;
 
     // offset 11: Point size
-    buffer[i++] = Size;
+    buffer[i++] = transform.Scale;
   }
 }
