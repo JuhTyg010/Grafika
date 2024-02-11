@@ -456,6 +456,21 @@ internal class Program
         }
         break;
 
+      case Key.G:
+        Ut.Message("Added launch");
+        sim.GenerateLauncher();
+        break;
+
+      case Key.H:
+        Ut.Message("Removed launch");
+        sim.RemoveLauncher();
+        break;
+
+      case var k when (k >= Key.F1 && k <= Key.F10):
+        Ut.Message("Function: " + (k - 290));
+        sim.FireLauncher((int) k - 290);
+        break;
+
       case Key.Up:
         // Increase particle generation rate.
         if (sim != null)

@@ -18,6 +18,7 @@ public class Simulation
   public int MaxParticles { get; private set; }
 
   private double SimulatedTime;
+  private int LaunchCount;
   public double ParticleRate { get; set; }
 
   public Simulation (double now, double particleRate, int maxParticles, int initParticles, float timeScale = 1.0f)
@@ -26,7 +27,8 @@ public class Simulation
     ParticleRate = particleRate;
     MaxParticles = maxParticles;
     TimeScale = timeScale;
-    GenerateLauncher(initParticles);
+    LaunchCount = 0;
+    GenerateLaunchers(initParticles);
   }
 
 
@@ -51,20 +53,55 @@ public class Simulation
       particles.Add(p);
     }
   }
-  private void GenerateLauncher(int number)
+  private void GenerateLaunchers(int number)
   {
-    Random rnd = new();
     if (number <= 0)
       return;
-
     while (number-- > 0)
     {
       // Generate one new particle.
-      Transform transform = new (new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()), new Vector2(1, 0), 10, 0);
-      Particle p = new Launcher(SimulatedTime, transform, new Vector3(1, 0, 0), new Vector3(0, 0, 0), rnd.Next(1,5));
-      p.timeScale = TimeScale;
-      particles.Add(p);
+      GenerateLauncher();
     }
+  }
+
+  public void GenerateLauncher()
+  {
+    if (LaunchCount > 10) return;
+    LaunchCount++;
+    Random rnd = new();
+    Transform transform = new (new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()), new Vector2(1, 0), 10, 0);
+    Particle p = new Launcher(SimulatedTime, transform, new Vector3(1, 0, 0), new Vector3(0, 0, 0), rnd.Next(1,5));
+    p.timeScale = TimeScale;
+    particles.Add(p);
+  }
+
+  private int FindLauncher (int n = 0)
+  {
+    for (int i = 0; i < particles.Count; i++)
+    {
+      if (particles[i] is Launcher)
+      {
+        if (n <= 0) return i;
+        n--;
+      }
+    }
+
+    return -1;
+  }
+
+  public void RemoveLauncher() {
+    int i = FindLauncher();
+    if (i != -1)
+    {
+      particles.RemoveAt(i);
+      LaunchCount--;
+    }
+  }
+
+  public void FireLauncher (int n)
+  {
+    int i = FindLauncher(n);
+    if (i != -1) particles[i].TimeToLive = 0;
   }
 
   public void SimulateTo(double time)
@@ -134,7 +171,8 @@ public class Simulation
   public void Reset()
   {
     particles.Clear();
-    GenerateLauncher(5);
+    LaunchCount = 0;  
+    GenerateLaunchers(5);
   }
 
   public void ChangeTimeScale(float timeScale)
