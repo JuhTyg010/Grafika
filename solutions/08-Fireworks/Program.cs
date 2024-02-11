@@ -36,6 +36,8 @@ public class Options
   public string TextureFile { get; set; } = ":check:";
 }
 
+
+
 abstract class Particle
 {
   public Vector3 Position { get; protected set;}
@@ -52,10 +54,15 @@ abstract class Particle
   abstract public bool SimulateTo(double time);
   abstract public void FillBuffer(float[] buffer, ref int i);
 
+  protected double Magnitude(Vector3 v) {
+    return Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
+  }
+
 }
 
 class FlameParticle : Particle
 {
+  private double decay;
   public FlameParticle(double now, Vector3 position, Vector3 color, float size, Vector3 velocity, double age, double weight = 1.0, double friction = 0.0)
   {
     Position = position;
@@ -66,6 +73,7 @@ class FlameParticle : Particle
     SimulatedTime = now;
     this.Weight = weight;
     this.Friction = friction;
+    decay = 0;
   }
 
   public override bool SimulateTo (double time)
@@ -75,19 +83,26 @@ class FlameParticle : Particle
 
     double dt = time - SimulatedTime;
     SimulatedTime = time;
-
+    //dont care about the age the velocity chenges over time and the color and size when is smaller than constant remove,
+    //also if the magnitude of the velocity is smaller than 0.5 and also if size is smaller than 0.1
     Age -= dt;
-    if (Age <= 0.0)
-      return false;
+    if (Age <= 0.0) return false;
+    if ( Size < .2 || Magnitude(Color) < 0.1) return false;
+
+
+
     Vector3 gravitation = new Vector3(0, (float)-(GravityConst * dt * Weight), 0);
     Vector3 friction = -Velocity / (float)(Math.Sqrt(Velocity.X * Velocity.X + Velocity.Y * Velocity.Y + Velocity.Z * Velocity.Z)) * (float)(Friction * dt);
     Velocity += gravitation;
     Velocity += friction;
-
-
     Position += Velocity * (float)dt;
-    // Change particle color.
 
+    // Change particle color.
+    //TODO chenge color and size based on speed
+
+    Color *= (float)Math.Pow(0.5, dt);
+    decay += dt/4;
+    Size -= (float)decay;
 
     return true;
   }
@@ -217,7 +232,6 @@ class Launcher : Particle
     if (Age <= 0.0)
     {
       Age = delta;
-
       return false;
     }
 
@@ -252,109 +266,44 @@ class Launcher : Particle
 
 public class Simulation
 {
-  /// <summary>
-  /// Dynamic array of all current particles.
-  /// </summary>
   private List<Particle> particles = new();
 
-  private double AirFriction = .8;
-
-  /// <summary>
-  /// Actual number of particles.
-  /// </summary>
+  private double AirFriction = .5;
   public int Particles => particles.Count;
-
-  /// <summary>
-  /// Particle number limit.
-  /// </summary>
   public int MaxParticles { get; private set; }
 
-  /// <summary>
-  /// Last simulated time in seconds.
-  /// </summary>
   private double SimulatedTime;
-
-  /// <summary>
-  /// Number of particles generated in one second.
-  /// </summary>
   public double ParticleRate { get; set; }
 
-  /// <summary>
-  /// Initialize a new particle simulator.
-  /// </summary>
-  /// <param name="now">Current real time in seconds.</param>
-  /// <param name="particleRate">Maximum particle generation rate in particles per second.</param>
-  /// <param name="maxParticles">Maximum number of particles in the system (can be slightly exceeded).</param>
-  /// <param name="initParticles">Initial number of particles (the rest will be generated later).</param>
   public Simulation (double now, double particleRate, int maxParticles, int initParticles)
   {
     SimulatedTime = now;
     ParticleRate = particleRate;
     MaxParticles = maxParticles;
-    Generate(initParticles);
+    GenerateLauncher(initParticles);
   }
 
-  static Vector3[] CalculateRegularPolyhedronNormals(int n)
-  {
-    // Define the vertices of the regular polyhedron
-    Vector3[] vertices = GenerateRegularPolyhedronVertices(n);
-
-    // Calculate normal vectors for each face of the polyhedron
-    Vector3[] normals = new Vector3[n];
-    for (int i = 0; i < n; i++)
-    {
-      // Calculate normal vector for the i-th face
-      normals[i] = CalculateFaceNormal(vertices[i], vertices[(i + 1) % n], vertices[(i + 2) % n]);
-    }
-
-    // Normalize the normal vectors
-    for (int i = 0; i < normals.Length; i++)
-    {
-      normals[i] = Vector3.Normalize(normals[i]);
-    }
-
-    return normals;
-  }
-
-  static Vector3[] GenerateRegularPolyhedronVertices(int n)
-  {
-    // Example: Generating vertices for a regular cube
-    Vector3[] vertices = new Vector3[n];
-    double theta = 2 * Math.PI / n;
-    for (int i = 0; i < n; i++)
-    {
-      double x = Math.Cos(i * theta);
-      double y = Math.Sin(i * theta);
-      vertices[i] = new Vector3((float)x, (float)y, 0);
-    }
-    return vertices;
-  }
-
-  static Vector3 CalculateFaceNormal(Vector3 v1, Vector3 v2, Vector3 v3)
-  {
-    // Calculate the normal vector of a face given three vertices
-    Vector3 edge1 = v2 - v1;
-    Vector3 edge2 = v3 - v1;
-    return Vector3.Normalize(Vector3.Cross(edge1, edge2));
-  }
 
   private void GenerateExplode(int number, Vector3 position, Vector3 color, float size, double velocity, double age)
   {
     Random rnd = new();
-    Vector3 direction = new Vector3(1, 1, 0);
+    Vector3 direction = new Vector3(0, 1, 0);
+    float theta = (float)(rnd.NextDouble() * 2 * Math.PI);
+    float phi = (float)(Math.Acos(2 * rnd.Next(0,1) - 1));
     if (number <= 0)
       return;
 
-    while (number-- > 0)
+    for (int i = 0; i < number; i++)
     {
-      //change vector to generate particles in a sphere
-      direction = new Vector3(rnd.Next(-1, 1) * (float) rnd.NextDouble(), rnd.Next(-1, 1) * (float) rnd.NextDouble(), rnd.Next(-1, 1) * (float) rnd.NextDouble());
-      // Generate one new particle.
-      particles.Add(new FlameParticle(SimulatedTime, position, new Vector3(1,1,1), size,direction * (float)velocity, age, .01, AirFriction));
+      theta = (float)(rnd.NextDouble() * 2 * Math.PI);
+      phi = (float)(rnd.NextDouble() * Math.PI);
+      direction = new Vector3((float)(Math.Sin(phi) * Math.Cos(theta)), (float)Math.Cos(phi), (float)(Math.Sin(phi) * Math.Sin(theta)));
+      particles.Add(new FlameParticle(SimulatedTime, position, color, size,
+        direction * (float)velocity, age, .05, AirFriction));
     }
   }
 
-  private void Generate(int number)
+  private void GenerateLauncher(int number)
   {
     Random rnd = new();
     if (number <= 0)
@@ -364,17 +313,14 @@ public class Simulation
     {
       Console.WriteLine("Generating");
       // Generate one new particle.
-      particles.Add(new Launcher(SimulatedTime,
-                                 new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()),
-                                 new Vector3(1, 0, 0),
-                                 10,
-                                 new Vector3(0, 0, 0),
-                                 rnd.Next(1, 5)));
+      particles.Add(new Launcher(SimulatedTime, new Vector3((float)rnd.NextDouble(), -1, (float)rnd.NextDouble()),
+        new Vector3(1, 0, 0), 10, new Vector3(0, 0, 0), rnd.Next(1, 5)));
     }
   }
 
   public void SimulateTo(double time)
   {
+    Random rnd = new();
     if(time <= SimulatedTime)
       return;
 
@@ -390,14 +336,18 @@ public class Simulation
       if(particles[toRemove[i]] is Launcher)
       {
         Console.WriteLine("Shoot");
-        particles.Add(new RocketParticle(time, particles[toRemove[i]].Position, new Vector3(0,1,0),
-          particles[toRemove[i]].Size/2, new Vector3(0,2,0), 1, .1, AirFriction));
+        //TODO: velocity should be something pointed up but in range angle
+        Vector3 velocity = new Vector3(0 + (float)(Math.Min(rnd.NextDouble(), 0.5) * rnd.Next(-1, 1)),
+          1 + (float)rnd.NextDouble(),
+          0 + (float)(Math.Min(rnd.NextDouble(), 0.5) * rnd.Next(-1, 1)));
+        particles.Add(new RocketParticle(time, particles[toRemove[i]].Position, new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()),
+          particles[toRemove[i]].Size/2, velocity, 1, .1, AirFriction));
       }
       else if(particles[toRemove[i]] is RocketParticle)
       {
         Console.WriteLine("Explode");
         Particle p = particles[toRemove[i]];
-        GenerateExplode(100, p.Position, p.Color, p.Size, 1, 1);
+        GenerateExplode(400, p.Position, p.Color, p.Size, Math.Max(0.5, rnd.NextDouble()), 10);
         particles.RemoveAt(toRemove[i]);
       }
       else
@@ -494,8 +444,6 @@ internal class Program
   // Particle simulation system.
   private static Simulation? sim;
 
-  //////////////////////////////////////////////////////
-  // Application.
 
   private static string WindowTitle()
   {
@@ -601,13 +549,8 @@ internal class Program
       input.Mice[i].Scroll      += MouseScroll;
     }
 
-    // OpenGL global reference (shortcut).
     Gl = GL.GetApi(window);
 
-    //------------------------------------------------------
-    // Render data.
-
-    // Init the rendering data.
     lock (renderLock)
     {
       // Initialize the simulation object and fill the VB.
@@ -644,22 +587,11 @@ internal class Program
     SetupViewport();
   }
 
-  /// <summary>
-  /// Mouse horizontal scaling coefficient.
-  /// One unit/pixel of mouse movement corresponds to this distance in world space.
-  /// </summary>
+  //scaling for mouse movement
   private static float mouseCx =  0.001f;
 
-  /// <summary>
-  /// Mouse vertical scaling coefficient.
-  /// Vertical scaling is just negative value of horizontal one.
-  /// </summary>
   private static float mouseCy = -0.001f;
 
-  /// <summary>
-  /// Does all necessary steps after window setup/resize.
-  /// Assumes valid values in 'width' and 'height'.
-  /// </summary>
   private static void SetupViewport()
   {
     // OpenGL viewport.
@@ -674,10 +606,6 @@ internal class Program
     mouseCy = -mouseCx;
   }
 
-  /// <summary>
-  /// Called after window resize.
-  /// </summary>
-  /// <param name="newSize">New window size in pixels.</param>
   private static void OnResize(Vector2D<int> newSize)
   {
     width  = newSize[0];
@@ -685,10 +613,6 @@ internal class Program
     SetupViewport();
   }
 
-  /// <summary>
-  /// Called every time the content of the window should be redrawn.
-  /// </summary>
-  /// <param name="obj"></param>
   private static unsafe void OnRender(double obj)
   {
     Debug.Assert(Gl != null);
@@ -778,14 +702,8 @@ internal class Program
     texture?.Dispose();
   }
 
-  /// <summary>
-  /// Shift counter (0 = no shift pressed).
-  /// </summary>
   private static int shiftDown = 0;
 
-  /// <summary>
-  /// Ctrl counter (0 = no ctrl pressed).
-  /// </summary>
   private static int ctrlDown = 0;
 
   /// <summary>
@@ -944,120 +862,67 @@ internal class Program
         break;
     }
   }
-
-  /// <summary>
-  /// Mouse dragging - current X coordinate in pixels.
-  /// </summary>
+  //dragging variables
   private static float currentX = 0.0f;
 
-  /// <summary>
-  /// Mouse dragging - current Y coordinate in pixels.
-  /// </summary>
   private static float currentY = 0.0f;
 
-  /// <summary>
-  /// True if dragging mode is active.
-  /// </summary>
   private static bool dragging = false;
 
-  /// <summary>
-  /// Handler function for mouse button down.
-  /// </summary>
-  /// <param name="mouse">Mouse object.</param>
-  /// <param name="btn">Button identification.</param>
   private static void MouseDown(IMouse mouse, MouseButton btn)
   {
-    if (tb != null)
-      tb.MouseDown(mouse, btn);
+    if (tb != null) tb.MouseDown(mouse, btn);
 
-    if (btn == MouseButton.Right)
-    {
+    if (btn == MouseButton.Right) {
       Ut.MessageInvariant($"Right button down: {mouse.Position}");
 
-      // Start dragging.
       dragging = true;
       currentX = mouse.Position.X;
       currentY = mouse.Position.Y;
     }
   }
 
-  /// <summary>
-  /// Handler function for mouse button up.
-  /// </summary>
-  /// <param name="mouse">Mouse object.</param>
-  /// <param name="btn">Button identification.</param>
   private static void MouseUp(IMouse mouse, MouseButton btn)
   {
-    if (tb != null)
-      tb.MouseUp(mouse, btn);
+    if (tb != null) tb.MouseUp(mouse, btn);
 
-    if (btn == MouseButton.Right)
-    {
+    if (btn == MouseButton.Right) {
       Ut.MessageInvariant($"Right button up: {mouse.Position}");
-
-      // Stop dragging.
       dragging = false;
     }
   }
 
-  /// <summary>
-  /// Handler function for mouse move.
-  /// </summary>
-  /// <param name="mouse">Mouse object.</param>
-  /// <param name="xy">New mouse position in pixels.</param>
   private static void MouseMove(IMouse mouse, System.Numerics.Vector2 xy)
   {
     if (tb != null)
       tb.MouseMove(mouse, xy);
 
-    if (mouse.IsButtonPressed(MouseButton.Right))
-    {
+    if (mouse.IsButtonPressed(MouseButton.Right)) {
       Ut.MessageInvariant($"Mouse drag: {xy}");
     }
 
-    // Object dragging.
-    if (dragging)
-    {
+    if (dragging) {
       float newX = mouse.Position.X;
       float newY = mouse.Position.Y;
 
-      if (newX != currentX || newY != currentY)
-      {
-        //if (Objects.Count > 0)
-        //{
-        //  LastObject.Translate(new((newX - currentX) * mouseCx, (newY - currentY) * mouseCy, 0.0f));
-        //}
-
+      if (newX != currentX || newY != currentY) {
         currentX = newX;
         currentY = newY;
       }
     }
   }
 
-  /// <summary>
-  /// Handler function for mouse button double click.
-  /// </summary>
-  /// <param name="mouse">Mouse object.</param>
-  /// <param name="btn">Button identification.</param>
-  /// <param name="xy">Double click position in pixels.</param>
   private static void MouseDoubleClick(IMouse mouse, MouseButton btn, System.Numerics.Vector2 xy)
   {
-    if (btn == MouseButton.Right)
-    {
+    if (btn == MouseButton.Right) {
       Ut.Message("Closed by double-click.", true);
       window?.Close();
     }
   }
 
-  /// <summary>
-  /// Handler function for mouse wheel rotation.
-  /// </summary>
-  /// <param name="mouse">Mouse object.</param>
-  /// <param name="btn">Mouse wheel object (Y coordinate is used here).</param>
   private static void MouseScroll(IMouse mouse, ScrollWheel wheel)
   {
-    if (tb != null)
-    {
+    if (tb != null) {
       tb.MouseWheel(mouse, wheel);
       SetWindowTitle();
     }
