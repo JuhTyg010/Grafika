@@ -28,8 +28,8 @@ public class Options
   [Option('p', "particles", Required = false, Default = 10000, HelpText = "Maximum number of particles.")]
   public int Particles { get; set; } = 10000;
 
-  [Option('r', "rate", Required = false, Default = 1000.0, HelpText = "Particle generation rate per second.")]
-  public double ParticleRate { get; set; } = 1000.0;
+  [Option('i', "count", Required = false, Default = 5, HelpText = "Count of launchers in scene")]
+  public int LauncherCount { get; set; } = 5;
 
   [Option('t', "texture", Required = false, Default = ":check:", HelpText = "User-defined texture.")]
   public string TextureFile { get; set; } = ":check:";
@@ -94,6 +94,7 @@ internal class Program
 
   // Shader program.
   private static ShaderProgram? ShaderPrg;
+  private static int initLaunchers;
 
   private static double nowSeconds = FPS.NowInSeconds;
   private static double timeMultiplier = 1.0;
@@ -169,7 +170,7 @@ internal class Program
 
         textureFile = o.TextureFile;
         maxParticles = Math.Min(MAX_VERTICES, o.Particles);
-        particleRate = o.ParticleRate;
+        initLaunchers = Math.Min(10, o.LauncherCount);
 
         window.Run();
       });
@@ -211,7 +212,7 @@ internal class Program
     lock (renderLock)
     {
       // Initialize the simulation object and fill the VB.
-      sim = new Simulation(nowSeconds, maxParticles,  5);
+      sim = new Simulation(nowSeconds, maxParticles, initLaunchers);
       vertices = sim.FillBuffer(vertexBuffer);
 
       // Vertex Array Object = Vertex buffer + Index buffer.
@@ -470,7 +471,7 @@ internal class Program
         Ut.Message("Function: " + (k - 290));
         sim.FireLauncher((int) k - 290);
         break;
-      
+
 
       case Key.Escape:
         // Close the application.

@@ -7,7 +7,7 @@ Marek Sádovský
 command-line arguments
 -w, -h - initial window size in pixels
 -p - maximum number of particles in the system (see details later)
--r - particle generator rate (number of generated particles in one second, could be changed later using the keys Up and Down)
+-i - initial launcher caunt
 -t - optional texture file (default is :check: = checkerboard)
 
 
@@ -31,12 +31,12 @@ Mouse.wheel - zoom in/out
 ## Algorithm
 I have Object (class) Particle and some child Objects. I apply gravity and physics on them. Using the simulation to simulate it in time.
 simulate control how much of particles we have it generates new ones and so on. Buffer calls simulation to get data and simulation asks 
-every particle to get specific data of the paritcle.
+every particle to get specific data of the paritcle. Automatic particle count adjustment for better performence.
 
 
 ## Extra work / bonuses
 there is posibily that rocket explodes to more rockets wich will explode later on. Also there is trail of the rockets and every explousion 
-slowely wanishes. You can also interactively fire from launchers generate new ones or remove old.
+slowely wanishes. You can also interactively fire from launchers generate new ones or remove old. recount of particles to not allow overload
 
 ## Use of AI
 None sorry.
