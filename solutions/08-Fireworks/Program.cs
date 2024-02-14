@@ -108,7 +108,7 @@ internal class Program
 
     if (sim != null)
     {
-      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}], rate={2:f0}", sim.Particles, sim.MaxParticles, sim.ParticleRate));
+      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}]", sim.Particles, sim.MaxParticles));
     }
 
     sb.Append(string.Format(CultureInfo.InvariantCulture, ", fps={0:f1}", fps.Fps));
@@ -211,7 +211,7 @@ internal class Program
     lock (renderLock)
     {
       // Initialize the simulation object and fill the VB.
-      sim = new Simulation(nowSeconds, particleRate, maxParticles,  5);
+      sim = new Simulation(nowSeconds, maxParticles,  5);
       vertices = sim.FillBuffer(vertexBuffer);
 
       // Vertex Array Object = Vertex buffer + Index buffer.
@@ -470,39 +470,7 @@ internal class Program
         Ut.Message("Function: " + (k - 290));
         sim.FireLauncher((int) k - 290);
         break;
-
-      case Key.Up:
-        // Increase particle generation rate.
-        if (sim != null)
-        {
-          sim.ParticleRate *= 1.1;
-          SetWindowTitle();
-        }
-        break;
-
-      case Key.Down:
-        // Decrease particle generation rate.
-        if (sim != null)
-        {
-          sim.ParticleRate /= 1.1;
-          SetWindowTitle();
-        }
-        break;
-
-      case Key.F1:
-        // Help.
-        Ut.Message("T           toggle texture", true);
-        Ut.Message("I           toggle Phong shading", true);
-        Ut.Message("P           toggle perspective", true);
-        Ut.Message("V           toggle VSync", true);
-        Ut.Message("C           camera reset", true);
-        Ut.Message("R           reset the simulation", true);
-        Ut.Message("Up, Down    change particle generation rate", true);
-        Ut.Message("F1          print help", true);
-        Ut.Message("Esc         quit the program", true);
-        Ut.Message("Mouse.left  Trackball rotation", true);
-        Ut.Message("Mouse.wheel zoom in/out", true);
-        break;
+      
 
       case Key.Escape:
         // Close the application.

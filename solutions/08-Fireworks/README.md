@@ -18,7 +18,15 @@ function keys (f1 to f10) - manual fire first to 10-th launcher
 W/S - zoom in/out
 A/D - camera move left/right
 Q/E - camera move down/up
-
+R - reset the simulation
+C - camera reset
+T - toggle texture
+I - toggle phong shading
+P - toggle perspective
+V - toggle Vsync
+ESC - quits the program
+Mouse.left - Trackball rotation
+Mouse.wheel - zoom in/out
 
 ## Algorithm
 I have Object (class) Particle and some child Objects. I apply gravity and physics on them. Using the simulation to simulate it in time.
@@ -28,7 +36,7 @@ every particle to get specific data of the paritcle.
 
 ## Extra work / bonuses
 there is posibily that rocket explodes to more rockets wich will explode later on. Also there is trail of the rockets and every explousion 
-slowely wanishes.
+slowely wanishes. You can also interactively fire from launchers generate new ones or remove old.
 
 ## Use of AI
 None sorry.
