@@ -19,6 +19,22 @@ abstract class Particle
 
   public double TimeToLive { get; set; }
   public  double SimulatedTime { get; protected set; }
+
+  public Particle()
+  {
+    transform = new Transform(new Vector3(0, 0, 0), new Vector2(0, 0), 1, 1);
+    Color = new Vector3(1, 1, 1);
+    Velocity = new Vector3(0, 0, 0);
+    TimeToLive = 0;
+  }
+  public Particle (double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive, Func<string> onDeath = null)
+  {
+    SimulatedTime = now;
+    this.transform = transform;
+    Color = color;
+    Velocity = velocity;
+    TimeToLive = timeToLive;
+  }
   abstract public bool SimulateTo(double time, double gravity, double friction);
   abstract public void FillBuffer(float[] buffer, ref int i);
 
