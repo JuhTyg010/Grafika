@@ -10,8 +10,11 @@ public class Simulation
 {
   private List<Particle> particles = new();
 
+  private readonly float IncreaseRate = 1.2f;
+  private readonly float DecreaseRate = 0.8f;
   private readonly double AirFriction = .5;
   private readonly double Gravity = 9.81;
+  private readonly int UpperLimit = 800;
   public int Particles => particles.Count;
 
   public float TimeScale { get; private set; }
@@ -19,15 +22,16 @@ public class Simulation
 
   private double SimulatedTime;
   private int LaunchCount;
-  public double ParticleRate { get; set; }
 
-  public Simulation (double now, double particleRate, int maxParticles, int initParticles, float timeScale = 1.0f)
+  private int explodeParticleCount;
+
+  public Simulation (double now, int maxParticles, int initParticles, float timeScale = 1.0f)
   {
     SimulatedTime = now;
-    ParticleRate = particleRate;
     MaxParticles = maxParticles;
     TimeScale = timeScale;
     LaunchCount = 0;
+    explodeParticleCount = Math.Min(UpperLimit, (maxParticles - 20) / 40);
     GenerateLaunchers(initParticles);
   }
 
@@ -55,7 +59,7 @@ public class Simulation
   }
 
   private void GenerateRackets (int number, Transform transform, Vector3 color, Vector3 velocity, double age,
-    float size, int childCount)
+    float size)
   {
     transform.Scale = size;
     Random rnd = new();
@@ -130,6 +134,7 @@ public class Simulation
 
     List<int> toRemove = new();
     List<Particle> toAdd = new();
+    int rockets = 0;
     for(int i = 0; i < particles.Count; i++)
     {
       if (!particles[i].SimulateTo(time, Gravity, AirFriction))
@@ -138,6 +143,7 @@ public class Simulation
       {
         particles[i].AddForce(new Vector3(0, .16f, 0) * TimeScale);
         toAdd.Add(particles[i]);
+        rockets++;
       }
     }
     SimulatedTime = time;
@@ -152,6 +158,9 @@ public class Simulation
         transform.Weight = 1f;
         transform.Scale = 4;
         transform.Rotation = new Vector2((float)theta, (float)phi);
+        if (Particles + (rockets * explodeParticleCount - 1) > MaxParticles - 3 * explodeParticleCount)
+          explodeParticleCount = (int)(explodeParticleCount * DecreaseRate);
+        if (Particles + (rockets * explodeParticleCount - 1) < MaxParticles/2) explodeParticleCount = Math.Min(UpperLimit,(int)(explodeParticleCount * IncreaseRate));
         Vector3 rocketColor;
         do {
           rocketColor = new Vector3((float)rnd.NextDouble(), (float)rnd.NextDouble(), (float)rnd.NextDouble());
@@ -163,10 +172,13 @@ public class Simulation
       }
       else if(particles[toRemove[i]] is RocketParticle)
       {
-
+        if (Particles + (rockets * explodeParticleCount - 1) > MaxParticles - 3 * explodeParticleCount)
+          explodeParticleCount = (int)(explodeParticleCount * DecreaseRate);
+        if (Particles + (rockets * explodeParticleCount - 1) < MaxParticles/2) explodeParticleCount = Math.Min(UpperLimit,(int)(explodeParticleCount * IncreaseRate));
         Particle p = particles[toRemove[i]];
-        if(rnd.Next(0, 10) == 0) GenerateRackets(5, p.transform.copy(), p.Color, new Vector3(1,1,1), 1, p.transform.Scale, 1);
-        else GenerateExplode(200, p.transform, p.Color, new Vector3(1,1,1) * (float)Math.Max(0.5, rnd.NextDouble()), 2, 7);
+        if(Particles + (rockets * explodeParticleCount - 1) < MaxParticles - 5 * explodeParticleCount && rnd.Next(0,20) == 0)
+          GenerateRackets(5, p.transform.copy(), p.Color, new Vector3(1,1,1), 1, p.transform.Scale);
+        else GenerateExplode(explodeParticleCount, p.transform, p.Color, new Vector3(1,1,1) * (float)Math.Max(0.5, rnd.NextDouble()), 2, 7);
         particles.RemoveAt(toRemove[i]);
       }
       else
