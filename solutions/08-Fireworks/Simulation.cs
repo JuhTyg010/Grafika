@@ -1,4 +1,5 @@
 using Silk.NET.Maths;
+using SixLabors.ImageSharp.ColorSpaces;
 
 
 namespace _08_Fireworks;
@@ -163,8 +164,12 @@ public class Simulation
         if (Particles + (rockets * explodeParticleCount - 1) < MaxParticles/2) explodeParticleCount = Math.Min(UpperLimit,(int)(explodeParticleCount * IncreaseRate));
         Vector3 rocketColor;
         do {
+          
           rocketColor = new Vector3((float)rnd.NextDouble(), (float)rnd.NextDouble(), (float)rnd.NextDouble());
-        } while ( (rocketColor.X + rocketColor.Y + rocketColor.Z) < 2);
+        } while ( (rocketColor.X + rocketColor.Y + rocketColor.Z) < 2 &&
+                  (Math.Abs(rocketColor.X - rocketColor.Y) > .5f ||
+                   Math.Abs(rocketColor.X - rocketColor.Z) > .5f ||
+                   Math.Abs(rocketColor.Z - rocketColor.Y) > .5f ));
 
         Particle p = new RocketParticle(time, transform, rocketColor, velocity, 1 + rnd.NextDouble());
         p.timeScale = TimeScale;
