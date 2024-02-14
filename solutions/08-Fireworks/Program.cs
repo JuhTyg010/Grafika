@@ -109,7 +109,7 @@ internal class Program
 
     if (sim != null)
     {
-      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}]", sim.Particles, sim.MaxParticles));
+      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}], explode couunt = {2}", sim.Particles, sim.MaxParticles, sim.explodeParticleCount));
     }
 
     sb.Append(string.Format(CultureInfo.InvariantCulture, ", fps={0:f1}", fps.Fps));

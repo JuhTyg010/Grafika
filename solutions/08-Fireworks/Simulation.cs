@@ -23,7 +23,7 @@ public class Simulation
   private double SimulatedTime;
   private int LaunchCount;
 
-  private int explodeParticleCount;
+  public int explodeParticleCount { get; private set; }
 
   public Simulation (double now, int maxParticles, int initParticles, float timeScale = 1.0f)
   {
@@ -69,7 +69,7 @@ public class Simulation
     {
       theta = (float)(rnd.NextDouble() * 2 * Math.PI);
       transform.Rotation = new Vector2(theta, 1);
-      transform.Weight = .5f;
+      transform.Weight = .6f;
       Particle p = new RocketParticle(SimulatedTime, transform.copy(), color, velocity, age);
       p.timeScale = TimeScale;
       particles.Add(p);
