@@ -53,6 +53,24 @@ public class Simulation
       particles.Add(p);
     }
   }
+
+  private void GenerateRackets (int number, Transform transform, Vector3 color, Vector3 velocity, double age,
+    float size, int childCount)
+  {
+    transform.Scale = size;
+    Random rnd = new();
+    float theta;
+    if (number <= 0) return;
+    for(int i = 0; i < number; i++)
+    {
+      theta = (float)(rnd.NextDouble() * 2 * Math.PI);
+      transform.Rotation = new Vector2(theta, 1);
+      transform.Weight = .5f;
+      Particle p = new RocketParticle(SimulatedTime, transform.copy(), color, velocity, age);
+      p.timeScale = TimeScale;
+      particles.Add(p);
+    }
+  }
   private void GenerateLaunchers(int number)
   {
     if (number <= 0)
@@ -134,15 +152,21 @@ public class Simulation
         transform.Weight = 1f;
         transform.Scale = 4;
         transform.Rotation = new Vector2((float)theta, (float)phi);
-        Particle p = new RocketParticle(time, transform,
-          new Vector3((float)rnd.NextDouble(),(float)rnd.NextDouble(),(float)rnd.NextDouble()), velocity, 1 + rnd.NextDouble());
+        Vector3 rocketColor;
+        do {
+          rocketColor = new Vector3((float)rnd.NextDouble(), (float)rnd.NextDouble(), (float)rnd.NextDouble());
+        } while ( (rocketColor.X + rocketColor.Y + rocketColor.Z) < 2);
+
+        Particle p = new RocketParticle(time, transform, rocketColor, velocity, 1 + rnd.NextDouble());
         p.timeScale = TimeScale;
         particles.Add(p);
       }
       else if(particles[toRemove[i]] is RocketParticle)
       {
+
         Particle p = particles[toRemove[i]];
-        GenerateExplode(400, p.transform, p.Color, new Vector3(1,1,1) * (float)Math.Max(0.5, rnd.NextDouble()), 10, 7);
+        if(rnd.Next(0, 10) == 0) GenerateRackets(5, p.transform.copy(), p.Color, new Vector3(1,1,1), 1, p.transform.Scale, 1);
+        else GenerateExplode(200, p.transform, p.Color, new Vector3(1,1,1) * (float)Math.Max(0.5, rnd.NextDouble()), 2, 7);
         particles.RemoveAt(toRemove[i]);
       }
       else

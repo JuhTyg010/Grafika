@@ -2,7 +2,7 @@
   "profiles": {
     "08-Fireworks": {
       "commandName": "Project",
-      "commandLineArgs": "-p 65000 -r 8000",
+      "commandLineArgs": "-p 1000000 -r 8000",
       "workingDirectory": "$(ProjectDir)"
     }
   }
