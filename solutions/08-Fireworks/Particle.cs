@@ -81,15 +81,13 @@ abstract class Particle
 class FlameParticle : Particle
 {
   private double wholeTime;
-  private float originalScale;
   public FlameParticle(double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive)
   {
     this.transform = transform;
     Color = color;
     Velocity = Rebase(velocity, transform.Rotation);
     TimeToLive = timeToLive;
-    wholeTime = timeToLive;
-    originalScale = transform.Scale;
+    wholeTime = 1;
     SimulatedTime = now;
   }
 
@@ -112,8 +110,11 @@ class FlameParticle : Particle
     // Change particle color.
     //TODO chenge color and size based on speed
 
-    Color *= (float)Math.Pow(0.4, dt);
-    transform.Scale *=  (float) Math.Pow(0.5, dt);
+    Color *= .98f;
+    transform.Scale -=  (float) (wholeTime * dt);
+    wholeTime += .2;
+
+
     return true;
   }
 
