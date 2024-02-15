@@ -36,6 +36,22 @@ public class Simulation
     GenerateLaunchers(initParticles);
   }
 
+  private Vector3 GenerateNiceColor()
+  {
+    Random rnd = new();
+    int main = rnd.Next(0, 3);
+    int none = rnd.Next(0, 3);
+    double[] values = new double[3];
+    values[main] = 1;
+    if (main != none)
+    {
+      //  0,1 --> 2  | 0,2 --> 1 | 1,2 --> 0  <=> 3 - (main + none)
+      int aditional = 3 - (main + none);
+      //values[aditional] = rnd.NextDouble();   //colors with some hue and value and saturation are 1
+      values[aditional] = 1;    //colors composed of 2 colors
+    }
+    return new Vector3((float)values[0], (float)values[1], (float)values[2]);
+  }
 
   private void GenerateExplode(int number,Transform transform, Vector3 color, Vector3 velocity, double age, float size)
   {
@@ -162,14 +178,7 @@ public class Simulation
         if (Particles + (rockets * explodeParticleCount - 1) > MaxParticles - 3 * explodeParticleCount)
           explodeParticleCount = (int)(explodeParticleCount * DecreaseRate);
         if (Particles + (rockets * explodeParticleCount - 1) < MaxParticles/2) explodeParticleCount = Math.Min(UpperLimit,(int)(explodeParticleCount * IncreaseRate));
-        Vector3 rocketColor;
-        do {
-          
-          rocketColor = new Vector3((float)rnd.NextDouble(), (float)rnd.NextDouble(), (float)rnd.NextDouble());
-        } while ( (rocketColor.X + rocketColor.Y + rocketColor.Z) < 2 &&
-                  (Math.Abs(rocketColor.X - rocketColor.Y) > .5f ||
-                   Math.Abs(rocketColor.X - rocketColor.Z) > .5f ||
-                   Math.Abs(rocketColor.Z - rocketColor.Y) > .5f ));
+        Vector3 rocketColor = GenerateNiceColor();
 
         Particle p = new RocketParticle(time, transform, rocketColor, velocity, 1 + rnd.NextDouble());
         p.timeScale = TimeScale;
