@@ -1,9 +1,4 @@
-using Silk.NET.Input;
-using Silk.NET.OpenGL;
-using Silk.NET.Windowing;
 using Silk.NET.Maths;
-using System.Globalization;
-
 
 namespace _08_Fireworks;
 using Vector3 = Vector3D<float>;
@@ -11,7 +6,7 @@ using Vector2 = Vector2D<float>;
 
 abstract class Particle
 {
-  public Transform transform { get; set; }
+  public Transform transform;
   public Vector3 Color { get; protected set;}
 
   public float timeScale;
@@ -27,7 +22,7 @@ abstract class Particle
     Velocity = new Vector3(0, 0, 0);
     TimeToLive = 0;
   }
-  public Particle (double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive, Func<string> onDeath = null)
+  public Particle (double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive)
   {
     SimulatedTime = now;
     this.transform = transform;
@@ -35,23 +30,23 @@ abstract class Particle
     Velocity = velocity;
     TimeToLive = timeToLive;
   }
-  abstract public bool SimulateTo(double time, double gravity, double friction);
-  abstract public void FillBuffer(float[] buffer, ref int i);
+  public abstract bool SimulateTo(double time, double gravity, double friction);
+  public abstract void FillBuffer(float[] buffer, ref int i);
 
   protected double Magnitude(Vector3 v) {
     return Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
   }
 
-  protected Vector3 Normalize (Vector3 v)
+  private Vector3 Normalize (Vector3 v)
   {
     return v / (float) Magnitude(v);
   }
 
-  protected Vector3 ApplyGravity (double gravity, double dt) {
+  private Vector3 ApplyGravity (double gravity, double dt) {
     return new Vector3(0, (float)-(gravity * transform.Weight * dt), 0);
   }
 
-  protected Vector3 ApplyFriction (double friction, Vector3 velocity, double dt)
+  private Vector3 ApplyFriction (double friction, Vector3 velocity, double dt)
   {
     return -Normalize(velocity) * (float)(friction * dt);
   }
@@ -108,7 +103,7 @@ class FlameParticle : Particle
     transform.Position += CalculateVelocity(dt, gravity, friction);
 
     // Change particle color.
-    //TODO chenge color and size based on speed
+    //TODO change color and size based on speed
 
     Color *= .99f;
     transform.Scale -=  (float) (wholeTime * dt);
@@ -203,7 +198,7 @@ class RocketParticle : Particle
 
 class Launcher : Particle
 {
-  private double delta;
+  private readonly double delta;
 
   public Launcher(double now, Transform transform, Vector3 color, Vector3 velocity, double timeToLive)
   {

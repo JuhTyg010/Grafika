@@ -6,7 +6,6 @@ using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using Silk.NET.Maths;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using Util;
 // ReSharper disable InconsistentNaming
@@ -78,19 +77,18 @@ internal class Program
   private static int vertices;
 
   public static int maxParticles;
-  public static double particleRate = 1000.0;
 
   private static BufferObject<float>? Vbo;
   private static VertexArrayObject<float>? Vao;
 
   // Texture.
   private static Util.Texture? texture;
-  private static bool useTexture = false;
+  private static bool useTexture;
   private static string textureFile = ":check:";
   private const int TEX_SIZE = 128;
 
   // Lighting.
-  private static bool usePhong = false;
+  private static bool usePhong;
 
   // Shader program.
   private static ShaderProgram? ShaderPrg;
@@ -109,13 +107,11 @@ internal class Program
 
     if (sim != null)
     {
-      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}], explode couunt = {2}", sim.Particles, sim.MaxParticles, sim.explodeParticleCount));
+      sb.Append(string.Format(CultureInfo.InvariantCulture, " [{0} of {1}], explode count = {2}", sim.Particles, sim.MaxParticles, sim.ExplodeParticleCount));
     }
 
     sb.Append(string.Format(CultureInfo.InvariantCulture, ", fps={0:f1}", fps.Fps));
-    if (window != null &&
-        window.VSync)
-      sb.Append(" [VSync]");
+    if (window != null && window.VSync) sb.Append(" [VSync]");
 
     double pps = fps.Pps;
     if (pps > 0.0)
@@ -152,7 +148,7 @@ internal class Program
   private static void Main(string[] args)
   {
     Parser.Default.ParseArguments<Options>(args)
-      .WithParsed<Options>(o =>
+      .WithParsed(o =>
       {
         WindowOptions options = WindowOptions.Default;
         options.Size = new Vector2D<int>(o.WindowWidth, o.WindowHeight);
@@ -271,7 +267,7 @@ internal class Program
     SetupViewport();
   }
 
-  private static unsafe void OnRender(double obj)
+  private static void OnRender(double obj)
   {
     Debug.Assert(Gl != null);
     Debug.Assert(ShaderPrg != null);
@@ -360,9 +356,9 @@ internal class Program
     texture?.Dispose();
   }
 
-  private static int shiftDown = 0;
+  private static int shiftDown;
 
-  private static int ctrlDown = 0;
+  private static int ctrlDown;
 
   /// <summary>
   /// Handler function for keyboard key up.
@@ -508,11 +504,11 @@ internal class Program
     }
   }
   //dragging variables
-  private static float currentX = 0.0f;
+  private static float currentX;
 
-  private static float currentY = 0.0f;
+  private static float currentY;
 
-  private static bool dragging = false;
+  private static bool dragging;
 
   private static void MouseDown(IMouse mouse, MouseButton btn)
   {
