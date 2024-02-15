@@ -110,7 +110,7 @@ class FlameParticle : Particle
     // Change particle color.
     //TODO chenge color and size based on speed
 
-    Color *= .98f;
+    Color *= .99f;
     transform.Scale -=  (float) (wholeTime * dt);
     wholeTime += .2;
 

@@ -392,10 +392,12 @@ internal class Program
         break;
       case Key.KeypadAdd:
         timeMultiplier += .2f;
+        timeMultiplier = Math.Min(2.0f, timeMultiplier);
         sim.ChangeTimeScale((float)timeMultiplier);
         break;
       case Key.KeypadSubtract:
         timeMultiplier -= .2f;
+        timeMultiplier = Math.Max(0.2f, timeMultiplier);
         sim.ChangeTimeScale((float)timeMultiplier);
         break;
       case Key.T:
