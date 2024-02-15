@@ -12,6 +12,8 @@ Marek Sádovský
 
 -t - optional texture file (default is :check: = checkerboard)
 
+-c - by default false if set to true you get more colors from rockets
+
 
 ## Input data
 G - add launcher (max 10)
@@ -51,8 +53,9 @@ every particle to get specific data of the paritcle. Automatic particle count ad
 
 
 ## Extra work / bonuses
-there is posibily that rocket explodes to more rockets wich will explode later on. Also there is trail of the rockets and every explousion 
-slowely wanishes. You can also interactively fire from launchers generate new ones or remove old. recount of particles to not allow overload
+There is posibily that rocket explodes to more rockets wich will explode later on. In other words multiple stage explousion. Also there is trail of the rockets and every explousion 
+slowely wanishes. You can also interactively fire from launchers generate new ones or remove old. Color of particles change over time and geting smaller and disappier like in real life.
+colors are selected the basic ones but can be changed by argument it will add more colors.
 
 ## Use of AI
 None sorry.

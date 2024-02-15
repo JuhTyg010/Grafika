@@ -30,6 +30,9 @@ public class Options
   [Option('i', "count", Required = false, Default = 5, HelpText = "Count of launchers in scene")]
   public int LauncherCount { get; set; } = 5;
 
+  [Option('c', "colors", Required = false, Default = false, HelpText = "add extra colors")]
+  public bool IsMoreColor { get; set; } = false;
+
   [Option('t', "texture", Required = false, Default = ":check:", HelpText = "User-defined texture.")]
   public string TextureFile { get; set; } = ":check:";
 }
@@ -96,6 +99,7 @@ internal class Program
 
   private static double nowSeconds = FPS.NowInSeconds;
   private static double timeMultiplier = 1.0;
+  private static bool isMoreColorful;
 
   // Particle simulation system.
   private static Simulation? sim;
@@ -158,6 +162,7 @@ internal class Program
         window = Window.Create(options);
         width  = o.WindowWidth;
         height = o.WindowHeight;
+        isMoreColorful = o.IsMoreColor;
 
         window.Load    += OnLoad;
         window.Render  += OnRender;
@@ -208,7 +213,7 @@ internal class Program
     lock (renderLock)
     {
       // Initialize the simulation object and fill the VB.
-      sim = new Simulation(nowSeconds, maxParticles, initLaunchers);
+      sim = new Simulation(nowSeconds, maxParticles, initLaunchers, (float) timeMultiplier, isMoreColorful);
       vertices = sim.FillBuffer(vertexBuffer);
 
       // Vertex Array Object = Vertex buffer + Index buffer.

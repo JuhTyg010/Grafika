@@ -20,16 +20,18 @@ public class Simulation
 
   private double simulatedTime;
   private int launchCount;
+  private bool isMoreColorful;
 
   public int ExplodeParticleCount { get; private set; }
 
-  public Simulation (double now, int maxParticles, int initParticles, float timeScale = 1.0f)
+  public Simulation (double now, int maxParticles, int initParticles, float timeScale = 1.0f, bool isMoreColorful = false)
   {
     simulatedTime = now;
     MaxParticles = maxParticles;
     TimeScale = timeScale;
     launchCount = 0;
     ExplodeParticleCount = Math.Min(UpperLimit, (maxParticles - 20) / 40);
+    this.isMoreColorful = isMoreColorful;
     GenerateLaunchers(initParticles);
   }
 
@@ -44,8 +46,8 @@ public class Simulation
     {
       //  0,1 --> 2  | 0,2 --> 1 | 1,2 --> 0  <=> 3 - (main + none)
       int additional = 3 - (main + none);
-      //values[additional] = rnd.NextDouble();   //colors with some hue and value and saturation are 1
-      values[additional] = 1;    //colors composed of 2 colors
+      if(isMoreColorful) values[additional] = rnd.NextDouble(); // something around 1000
+      else values[additional] = 1;    //6 in total
     }
     return new Vector3((float)values[0], (float)values[1], (float)values[2]);
   }
