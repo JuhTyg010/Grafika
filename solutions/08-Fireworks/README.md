@@ -4,28 +4,44 @@
 Marek Sádovský
 
 ## Command line arguments
-command-line arguments
 -w, -h - initial window size in pixels
+
 -p - maximum number of particles in the system (see details later)
--i - initial launcher caunt
+
+-i - initial launcher caunt (accept range 1-10)
+
 -t - optional texture file (default is :check: = checkerboard)
 
 
 ## Input data
 G - add launcher (max 10)
+
 H - remove launchr (min 0)
+
 function keys (f1 to f10) - manual fire first to 10-th launcher
+
 W/S - zoom in/out
+
 A/D - camera move left/right
+
 Q/E - camera move down/up
+
 R - reset the simulation
+
 C - camera reset
+
 T - toggle texture
+
 I - toggle phong shading
+
 P - toggle perspective
+
 V - toggle Vsync
+
 ESC - quits the program
+
 Mouse.left - Trackball rotation
+
 Mouse.wheel - zoom in/out
 
 ## Algorithm
